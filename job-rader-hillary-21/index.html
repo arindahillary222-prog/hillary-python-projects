@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#173f3a">
+    <meta name="application-name" content="JOB RADER HILLARY.21">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="JOB RADER HILLARY.21">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="description" content="Private job search, CV matching, resume drafting, and application tracking.">
+    <meta property="og:title" content="JOB RADER HILLARY.21">
+    <meta property="og:description" content="Private job search, CV matching, resume drafting, and application tracking.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="JOB RADER HILLARY.21">
+    <title>JOB RADER HILLARY.21</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary">
+        <a class="brand" href="#upload" data-route="upload" aria-label="JOB RADER HILLARY.21 home">
+          <img src="assets/logo.svg" alt="" width="42" height="42">
+          <span>
+            <strong>JOB RADER</strong>
+            <small>HILLARY.21</small>
+          </span>
+        </a>
+
+        <nav class="nav-list">
+          <button class="nav-item active" type="button" data-route="upload" data-i18n="navUpload">Upload CV</button>
+          <button class="nav-item" type="button" data-route="jobs" data-i18n="navJobs">Job Feed</button>
+          <button class="nav-item" type="button" data-route="tracker" data-i18n="navTracker">Tracker</button>
+          <button class="nav-item" type="button" data-route="resume" data-i18n="navResume">AI Resume</button>
+          <button class="nav-item" type="button" data-route="dashboard" data-i18n="navDashboard">Dashboard</button>
+        </nav>
+
+        <div class="privacy-meter" aria-live="polite">
+          <span class="privacy-dot"></span>
+          <span id="privacyStatus">No CV stored</span>
+        </div>
+      </aside>
+
+      <div class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" data-i18n="workspaceEyebrow">Private career workspace</p>
+            <h1 id="pageTitle" data-i18n="navUpload">Upload CV</h1>
+          </div>
+          <div class="topbar-actions">
+            <div class="preference-controls" aria-label="Display preferences">
+              <label class="compact-control">
+                <span data-i18n="languageLabel">Language</span>
+                <select id="languageSelect">
+                  <option value="en">English</option>
+                  <option value="de">Deutsch</option>
+                  <option value="fr">Français</option>
+                  <option value="zh">中文</option>
+                  <option value="sw">Kiswahili</option>
+                  <option value="hi">Indian (Hindi)</option>
+                  <option value="pt">Português</option>
+                  <option value="ar">العربية</option>
+                </select>
+              </label>
+              <label class="compact-control">
+                <span data-i18n="themeLabel">Theme</span>
+                <select id="themeSelect">
+                  <option value="light" data-i18n="themeLight">Light</option>
+                  <option value="dark" data-i18n="themeDark">Dark</option>
+                </select>
+              </label>
+            </div>
+            <button class="quiet-button" id="installButton" type="button" data-i18n="installApp">Install App</button>
+            <button class="danger-button" id="clearPrivateButton" type="button" data-i18n="clearPrivate">Clear CV + Searches</button>
+          </div>
+        </header>
+
+        <main>
+          <section class="view active" id="view-upload" aria-labelledby="uploadHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="uploadHeading" data-i18n="cvWorkspace">CV Workspace</h2>
+                <p data-i18n="cvWorkspaceSub">Analyze roles with CV text held in memory only.</p>
+              </div>
+              <span class="status-pill" id="cvModePill" data-i18n="privateMode">Private mode</span>
+            </div>
+
+            <div class="split-grid">
+              <form class="panel" id="cvForm">
+                <label class="field-label" for="cvFile" data-i18n="cvFile">CV file</label>
+                <input class="file-input" id="cvFile" type="file" accept=".txt,.md,.csv,.pdf,.doc,.docx">
+
+                <label class="field-label" for="cvText" data-i18n="cvText">CV text</label>
+                <textarea id="cvText" rows="12" placeholder="Paste CV text here for stronger match scoring." data-i18n-placeholder="cvTextPlaceholder"></textarea>
+
+                <label class="check-row">
+                  <input id="autoDeleteCv" type="checkbox">
+                  <span data-i18n="autoDeleteCv">Delete CV automatically after this search</span>
+                </label>
+
+                <div class="button-row">
+                  <button class="primary-button" type="submit" data-i18n="analyzeMatches">Analyze Matches</button>
+                  <button class="quiet-button" id="deleteCvButton" type="button" data-i18n="deleteCv">Delete CV</button>
+                </div>
+              </form>
+
+              <div class="panel">
+                <h3 data-i18n="privacyActions">Privacy Actions</h3>
+                <div class="action-stack">
+                  <button class="quiet-button full" id="clearSearchButton" type="button" data-i18n="clearSearchDrafts">Clear Search Drafts</button>
+                  <button class="danger-button full" id="factoryResetButton" type="button" data-i18n="factoryReset">Factory Reset App</button>
+                </div>
+                <div class="notice" id="uploadNotice" role="status" aria-live="polite" data-i18n="uploadNoticeDefault">
+                  CV content is not uploaded or saved to browser storage.
+                </div>
+                <div class="cv-readout" id="cvReadout" data-i18n="noCvLoaded">No CV loaded. Upload or paste a CV before matching.</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="view" id="view-jobs" aria-labelledby="jobsHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="jobsHeading" data-i18n="jobFeed">Job Feed</h2>
+                <p data-i18n="jobFeedSub">Pull fresh advertised roles, score them against your CV, and save promising leads.</p>
+              </div>
+              <span class="status-pill" id="resultCount" data-i18n="freshFeed">Fresh feed</span>
+            </div>
+
+            <form class="filter-bar" id="jobSearchForm">
+              <label>
+                <span data-i18n="role">Role</span>
+                <input id="roleSearch" type="search" placeholder="Werkstudent, civil engineering, design" data-i18n-placeholder="rolePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="location">Postal code or city</span>
+                <input id="locationSearch" type="search" placeholder="10115 Berlin, Munich, remote" data-i18n-placeholder="locationPlaceholder">
+              </label>
+              <label>
+                <span data-i18n="radiusKm">Radius</span>
+                <select id="radiusKm">
+                  <option value="0" data-i18n="anyDistance">Any distance</option>
+                  <option value="5">5 km</option>
+                  <option value="10">10 km</option>
+                  <option value="25">25 km</option>
+                  <option value="50">50 km</option>
+                  <option value="100">100 km</option>
+                  <option value="250" selected>250 km</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="minimumSuccess">Minimum success</span>
+                <input id="minMatch" type="number" min="0" max="100" step="5" value="0">
+              </label>
+              <label>
+                <span data-i18n="postedWithin">Posted within</span>
+                <select id="freshnessDays">
+                  <option value="1" data-i18n="posted24Hours">24 hours</option>
+                  <option value="7">7 days</option>
+                  <option value="14">14 days</option>
+                  <option value="30" selected>30 days</option>
+                  <option value="60">60 days</option>
+                  <option value="90">90 days</option>
+                </select>
+              </label>
+              <label class="check-row inline-check">
+                <input id="remoteOnly" type="checkbox">
+                <span data-i18n="remoteOnly">Remote only</span>
+              </label>
+              <fieldset class="filter-group">
+                <legend data-i18n="jobType">Job type</legend>
+                <label class="chip-check">
+                  <input type="checkbox" name="jobType" value="part-time">
+                  <span data-i18n="partTime">Part time</span>
+                </label>
+                <label class="chip-check">
+                  <input type="checkbox" name="jobType" value="student-job">
+                  <span data-i18n="studentJob">Student job</span>
+                </label>
+                <label class="chip-check">
+                  <input type="checkbox" name="jobType" value="mini-job">
+                  <span data-i18n="miniJob">Mini job</span>
+                </label>
+                <label class="chip-check">
+                  <input type="checkbox" name="jobType" value="full-time">
+                  <span data-i18n="fullTime">Full time</span>
+                </label>
+              </fieldset>
+              <button class="primary-button" type="submit" data-i18n="searchLiveJobs">Search Live Jobs</button>
+            </form>
+
+            <section class="panel alert-panel" aria-labelledby="alertsHeading">
+              <div>
+                <h3 id="alertsHeading" data-i18n="jobAlerts">Email job alerts</h3>
+                <p data-i18n="jobAlertsSub">Create an alert from the current role, location, radius, and job-type filters.</p>
+              </div>
+              <form class="alert-form" id="alertForm">
+                <label>
+                  <span data-i18n="alertEmail">Alert email</span>
+                  <input id="alertEmail" type="email" placeholder="you@example.com" autocomplete="email" data-i18n-placeholder="alertEmailPlaceholder">
+                </label>
+                <label>
+                  <span data-i18n="alertName">Alert name</span>
+                  <input id="alertName" type="text" placeholder="Berlin student jobs" data-i18n-placeholder="alertNamePlaceholder">
+                </label>
+                <button class="quiet-button" type="submit" data-i18n="createAlert">Create Alert</button>
+              </form>
+              <div class="feed-status compact-status" id="alertStatus" role="status" aria-live="polite" data-i18n="alertStatusDefault">
+                Alerts are saved locally now. Email delivery activates when the mail service is connected.
+              </div>
+              <div class="alert-list" id="alertList"></div>
+            </section>
+
+            <div class="feed-status" id="feedStatus" role="status" aria-live="polite" data-i18n="feedStart">
+              Upload a CV to instantly pull current jobs, or enter a role to search live jobs.
+            </div>
+            <div class="job-list" id="jobResults" aria-live="polite"></div>
+          </section>
+
+          <section class="view" id="view-tracker" aria-labelledby="trackerHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="trackerHeading" data-i18n="applicationTracker">Application Tracker</h2>
+                <p data-i18n="trackerSub">Move applications through each stage and remove old records.</p>
+              </div>
+              <button class="primary-button" id="toggleAddForm" type="button" data-i18n="addApplication">Add Application</button>
+            </div>
+
+            <form class="panel compact-form hidden" id="applicationForm">
+              <label>
+                <span data-i18n="jobTitle">Job title</span>
+                <input id="appTitle" required type="text" placeholder="Role title" data-i18n-placeholder="roleTitlePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="company">Company</span>
+                <input id="appCompany" required type="text" placeholder="Company name" data-i18n-placeholder="companyNamePlaceholder">
+              </label>
+              <label>
+                <span data-i18n="status">Status</span>
+                <select id="appStatus">
+                  <option value="Wishlist" data-i18n="statusWishlist">Wishlist</option>
+                  <option value="Applied" data-i18n="statusApplied">Applied</option>
+                  <option value="Screening" data-i18n="statusScreening">Screening</option>
+                  <option value="Interview" data-i18n="statusInterview">Interview</option>
+                  <option value="Offer" data-i18n="statusOffer">Offer</option>
+                  <option value="Rejected" data-i18n="statusRejected">Rejected</option>
+                </select>
+              </label>
+              <label>
+                <span data-i18n="link">Link</span>
+                <input id="appLink" type="url" placeholder="https://">
+              </label>
+              <label>
+                <span data-i18n="contact">Contact</span>
+                <input id="appContact" type="text" placeholder="Email or website" data-i18n-placeholder="contactPlaceholder">
+              </label>
+              <button class="primary-button" type="submit" data-i18n="save">Save</button>
+            </form>
+
+            <div class="kanban" id="trackerBoard"></div>
+          </section>
+
+          <section class="view" id="view-resume" aria-labelledby="resumeHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="resumeHeading" data-i18n="aiCoach">AI CV Coach</h2>
+                <p data-i18n="aiCoachSub">Generate job-specific CV improvements and a cover letter instantly.</p>
+              </div>
+              <button class="quiet-button" id="copyResumeButton" type="button" data-i18n="copyOutput">Copy Output</button>
+            </div>
+
+            <div class="split-grid">
+              <form class="panel" id="resumeForm">
+                <label>
+                  <span data-i18n="targetRole">Target role</span>
+                  <input id="targetRole" type="text" placeholder="Civil engineering working student" data-i18n-placeholder="targetRolePlaceholder">
+                </label>
+                <label>
+                  <span data-i18n="company">Company</span>
+                  <input id="targetCompany" type="text" placeholder="Company name" data-i18n-placeholder="companyNamePlaceholder">
+                </label>
+                <label>
+                  <span data-i18n="jobRequirements">Job requirements</span>
+                  <textarea id="targetRequirements" rows="7" placeholder="Paste a job description or use a job-card action." data-i18n-placeholder="requirementsPlaceholder"></textarea>
+                </label>
+                <label>
+                  <span data-i18n="output">Output</span>
+                  <select id="resumeTone">
+                    <option value="recommendations" data-i18n="cvRecommendations">CV recommendations</option>
+                    <option value="cover" data-i18n="coverLetter">Cover letter</option>
+                    <option value="both" data-i18n="both">Both</option>
+                  </select>
+                </label>
+                <button class="primary-button" type="submit" data-i18n="generate">Generate</button>
+              </form>
+              <textarea class="resume-output" id="resumeOutput" rows="16" spellcheck="true"></textarea>
+            </div>
+          </section>
+
+          <section class="view" id="view-dashboard" aria-labelledby="dashboardHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="dashboardHeading" data-i18n="dashboard">Dashboard</h2>
+                <p data-i18n="dashboardSub">Track progress without storing CV text or search history.</p>
+              </div>
+              <span class="status-pill" id="lastUpdated" data-i18n="ready">Ready</span>
+            </div>
+
+            <div class="metrics-grid" id="metricsGrid"></div>
+            <div class="panel">
+              <h3 data-i18n="dataControls">Data Controls</h3>
+              <div class="button-row">
+                <button class="danger-button" id="dashboardClearPrivate" type="button" data-i18n="clearPrivate">Clear CV + Searches</button>
+                <button class="danger-button ghost" id="dashboardReset" type="button" data-i18n="deleteAllApplications">Delete All Applications</button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <dialog class="install-dialog" id="installDialog" aria-labelledby="installTitle">
+      <div class="dialog-head">
+        <div>
+          <p class="eyebrow" data-i18n="installableApp">Installable app</p>
+          <h2 id="installTitle" data-i18n="installTitle">Install JOB RADER HILLARY.21</h2>
+        </div>
+        <button class="icon-button" id="closeInstallDialog" type="button" aria-label="Close install instructions">×</button>
+      </div>
+      <div class="install-grid">
+        <section>
+          <h3>Android</h3>
+          <p data-i18n="installAndroid">Open this site in Chrome, tap the browser menu, then choose Install app or Add to Home screen.</p>
+        </section>
+        <section>
+          <h3>iPhone</h3>
+          <p data-i18n="installIphone">Open this site in Safari, tap Share, then choose Add to Home Screen.</p>
+        </section>
+        <section>
+          <h3>Laptop</h3>
+          <p data-i18n="installLaptop">Open this site in Chrome or Edge and click the install icon in the address bar, or use the browser menu and choose Install.</p>
+        </section>
+      </div>
+      <p class="install-note" data-i18n="installNote">The app is a PWA, so phones and laptops install it from the browser without needing an app-store download.</p>
+    </dialog>
+  </body>
+</html>

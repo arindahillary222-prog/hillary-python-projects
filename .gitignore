@@ -11,4 +11,6 @@ Waking_Up_Together_Master_Manuscript_sanitized.docx
 .netlify/
 site_*.png
 assets/
+!job-rader-hillary-21/assets/
+!job-rader-hillary-21/assets/**
 manuscript_part_i_chapter_1.md
