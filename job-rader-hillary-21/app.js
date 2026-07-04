@@ -12,16 +12,7 @@ const AUTO_SEARCH_MIN_CV_CHARS = 80;
 const DEFAULT_RADIUS_KM = 250;
 const STRICT_CV_MATCH_SCORE = 35;
 const RELAXED_CV_MATCH_SCORE = 24;
-const STUDENT_PRIORITY_JOB_TITLES = [
-  "Werkstudent", "Studentenjob", "Minijob", "Aushilfe", "Teilzeit", "Nebenjob", "Praktikum", "HiWi",
-  "Werkstudent Energie", "Werkstudent Verfahrenstechnik", "Werkstudent Maschinenbau", "Werkstudent Produktion",
-  "Werkstudent Qualitätsmanagement", "Werkstudent Nachhaltigkeit", "Werkstudent Projektmanagement",
-  "Werkstudent Softwareentwicklung", "Werkstudent IT Support", "Werkstudent Data Analysis", "Werkstudent Logistik",
-  "Werkstudent Marketing", "Werkstudent Finance", "Werkstudent HR", "Laborhilfe", "Produktionshelfer",
-  "Lagerhelfer", "Eventhelfer", "Servicekraft", "Bauhelfer", "Aushilfe Wochenende"
-];
 const HIGH_FREQUENCY_GERMANY_JOB_TITLES = [
-  ...STUDENT_PRIORITY_JOB_TITLES,
   "Küchenhilfe", "Spülkraft", "Kellner", "Barista", "Verkäufer", "Kassierer", "Reinigungskraft",
   "Lieferfahrer", "Fahrradkurier", "Call-Center-Agent", "Kundenservice", "Bürohilfe", "Datenerfasser",
   "Pflegehilfskraft", "Schulbegleiter", "Nachhilfelehrer", "Softwareentwickler", "Frontend Developer",
@@ -38,9 +29,14 @@ const HIGH_FREQUENCY_GERMANY_JOB_TITLES = [
   "Anlagenmechaniker", "Schweißer", "Tischler", "Dachdecker", "Produktionsmitarbeiter", "Maschinenbediener",
   "Montagemitarbeiter", "Qualitätsprüfer", "Lehrer", "Erzieher", "Sozialarbeiter", "Sicherheitsmitarbeiter",
   "Hausmeister", "Facility Manager", "Solarteur", "Photovoltaik Monteur", "Windenergie Techniker",
-  "Energieberater", "Nachhaltigkeitsmanager", "HSE Manager"
+  "Energieberater", "Nachhaltigkeitsmanager", "HSE Manager", "Studentenjob", "Minijob",
+  "Aushilfe", "Teilzeit", "Nebenjob", "Praktikum", "HiWi", "Laborhilfe", "Produktionshelfer",
+  "Lagerhelfer", "Eventhelfer", "Servicekraft", "Bauhelfer", "Aushilfe Wochenende"
 ];
-const AUTO_FALLBACK_QUERIES = ["Werkstudent", "Studentenjob", "Minijob", "Aushilfe", "Teilzeit", "Nebenjob", "Praktikum"];
+const AUTO_FALLBACK_QUERIES = [
+  "Kundenservice", "Verkäufer", "Bürohilfe", "Lagerhelfer", "Reinigungskraft", "Data Analyst",
+  "Softwareentwickler", "Bauingenieur", "Pflegehelfer", "Produktionsmitarbeiter", "Koch", "Kassierer"
+];
 const GERMANY_CITY_HINTS = [
   "Berlin", "Hamburg", "Munich", "München", "Cologne", "Köln", "Frankfurt", "Stuttgart", "Düsseldorf",
   "Dortmund", "Essen", "Leipzig", "Bremen", "Dresden", "Hannover", "Nürnberg", "Nuremberg",
@@ -89,16 +85,16 @@ const ROLE_WORD_SYNONYMS = {
   minijob: ["mini"]
 };
 const MANUAL_QUERY_EXPANSIONS = [
-  { test: /\b(civil|construction)\b|\bbau/i, queries: ["Bauingenieur", "Werkstudent Bauingenieur", "Bauingenieurwesen", "construction engineer"] },
-  { test: /\bmechanical\b|maschinenbau/i, queries: ["Maschinenbau", "Werkstudent Maschinenbau", "mechanical engineer"] },
-  { test: /\belectrical\b|elektro/i, queries: ["Elektroingenieur", "Werkstudent Elektrotechnik", "electrical engineer"] },
-  { test: /\bsoftware|developer|entwickler/i, queries: ["Softwareentwickler", "Werkstudent Softwareentwicklung", "developer"] },
-  { test: /\bdata|analyst|analytics|analyse/i, queries: ["Data Analyst", "Werkstudent Data Analysis", "Datenanalyse"] },
-  { test: /\blogistics|warehouse|logistik|lager/i, queries: ["Logistik", "Werkstudent Logistik", "Lagerhelfer"] },
+  { test: /\b(civil|construction)\b|\bbau/i, queries: ["Bauingenieur", "Bauingenieurwesen", "construction engineer"] },
+  { test: /\bmechanical\b|maschinenbau/i, queries: ["Maschinenbau", "mechanical engineer"] },
+  { test: /\belectrical\b|elektro/i, queries: ["Elektroingenieur", "Elektrotechnik", "electrical engineer"] },
+  { test: /\bsoftware|developer|entwickler/i, queries: ["Softwareentwickler", "Softwareentwicklung", "developer"] },
+  { test: /\bdata|analyst|analytics|analyse/i, queries: ["Data Analyst", "Datenanalyse"] },
+  { test: /\blogistics|warehouse|logistik|lager/i, queries: ["Logistik", "Lagerhelfer"] },
   { test: /\bnursing|care|pflege/i, queries: ["Pflegehilfskraft", "Pflegefachkraft", "care assistant"] },
-  { test: /\bstudent|werkstudent|studentenjob/i, queries: ["Werkstudent", "Studentenjob", "Praktikum"] },
+  { test: /\bstudent|werkstudent|studentenjob/i, queries: ["Studentenjob", "Praktikum"] },
   { test: /\bmini\s?job|minijob/i, queries: ["Minijob", "Aushilfe"] },
-  { test: /\bpart[\s-]?time|teilzeit/i, queries: ["Teilzeit", "Werkstudent", "Aushilfe"] }
+  { test: /\bpart[\s-]?time|teilzeit/i, queries: ["Teilzeit", "Aushilfe"] }
 ];
 
 const TRANSLATIONS = {
@@ -138,7 +134,7 @@ const TRANSLATIONS = {
     jobFeedSub: "Pull fresh advertised roles, score them against your CV, and save promising leads.",
     freshFeed: "Fresh feed",
     role: "Role",
-    rolePlaceholder: "Werkstudent, civil engineering, design",
+    rolePlaceholder: "Civil engineering, nursing, design",
     location: "Postal code or city",
     locationPlaceholder: "10115 Berlin, Munich, remote",
     minimumSuccess: "Minimum success",
@@ -158,7 +154,7 @@ const TRANSLATIONS = {
     alertEmail: "Alert email",
     alertEmailPlaceholder: "you@example.com",
     alertName: "Alert name",
-    alertNamePlaceholder: "Berlin student jobs",
+    alertNamePlaceholder: "Berlin design jobs",
     createAlert: "Create Alert",
     alertStatusDefault: "Alerts are saved locally now. Email delivery activates when the mail service is connected.",
     alertNeedsRoleEmail: "Enter a role and email before creating an alert.",
@@ -174,12 +170,12 @@ const TRANSLATIONS = {
     distanceUnknown: "Distance not verified",
     feedStart: "Upload a CV to instantly pull current jobs, or enter a role to search live jobs.",
     searchCleared: "Search cleared. Upload a CV or enter a role to pull current advertised jobs.",
-    enterRoleFirst: "No role entered, so the app will start from student jobs and high-demand Germany roles.",
+    enterRoleFirst: "Enter a role or upload a CV so the app can search relevant current jobs.",
     pullingJobs: "Pulling fresh jobs from live sources...",
-    autoPullingJobs: "CV detected. Pulling current jobs matched to the CV, with student jobs prioritized...",
+    autoPullingJobs: "CV detected. Pulling current jobs matched to the CV...",
     searching: "Searching",
     liveJobsLoaded: "{count} fresh {roleWord} from {sources}. Updated {time}.",
-    autoJobsLoaded: "{count} current {roleWord} matched to the CV from {sources}. Student jobs are prioritized. Updated {time}.",
+    autoJobsLoaded: "{count} current {roleWord} matched to the CV from {sources}. Updated {time}.",
     fallbackJobsLoaded: "Showing broader current jobs because the first search was too narrow.",
     minimumRelaxed: "The app broadened the freshness window but kept CV and role relevance checks on.",
     liveJobsFailed: "Live jobs could not be loaded right now. Check your connection and try again.",
@@ -189,13 +185,12 @@ const TRANSLATIONS = {
     roleWordMany: "roles",
     searchingBoards: "Searching live job boards...",
     noCurrentRoles: "Ready for current jobs",
-    emptyFeedBody: "Upload a CV and the app will automatically pull current jobs matched to it, starting with student-friendly roles.",
+    emptyFeedBody: "Upload a CV and the app will automatically pull current jobs matched to it across job types.",
     languageRequired: "Language",
     languageGerman: "German",
     languageEnglish: "English",
     languageGermanEnglish: "German + English",
     languageNotMentioned: "Not mentioned",
-    studentPriority: "Student priority",
     applicationTracker: "Application Tracker",
     trackerSub: "Move applications through each stage and remove old records.",
     addApplication: "Add Application",
@@ -220,7 +215,7 @@ const TRANSLATIONS = {
     aiCoachSub: "Generate job-specific CV improvements and a cover letter instantly.",
     copyOutput: "Copy Output",
     targetRole: "Target role",
-    targetRolePlaceholder: "Civil engineering working student",
+    targetRolePlaceholder: "Civil engineering assistant",
     jobRequirements: "Job requirements",
     requirementsPlaceholder: "Paste a job description or use a job-card action.",
     output: "Output",
@@ -315,7 +310,7 @@ const LANGUAGE_META = {
 
 const PARTIAL_TRANSLATIONS = {
   de: {
-    languageName: "Deutsch", navUpload: "CV hochladen", navJobs: "Jobbörse", navTracker: "Tracker", navResume: "KI-Lebenslauf", navDashboard: "Dashboard", workspaceEyebrow: "Privater Karrierebereich", languageLabel: "Sprache", themeLabel: "Design", themeLight: "Hell", themeDark: "Dunkel", installApp: "App installieren", clearPrivate: "CV + Suchen löschen", noCvStored: "Kein CV gespeichert", cvInMemory: "CV im Speicher", cvWorkspace: "CV-Arbeitsbereich", cvWorkspaceSub: "Analysiere Rollen mit CV-Text nur im Arbeitsspeicher.", privateMode: "Privater Modus", readyToScore: "Bereit zum Bewerten", cvFile: "CV-Datei", cvText: "CV-Text", cvTextPlaceholder: "CV-Text hier einfügen für stärkere Match-Bewertung.", autoDeleteCv: "CV nach dieser Suche automatisch löschen", analyzeMatches: "Matches analysieren", deleteCv: "CV löschen", privacyActions: "Datenschutzaktionen", clearSearchDrafts: "Suchentwürfe löschen", factoryReset: "App zurücksetzen", uploadNoticeDefault: "CV-Inhalt wird nicht hochgeladen oder im Browser gespeichert.", noCvLoaded: "Kein CV geladen. Lade einen CV hoch oder füge ihn vor dem Matching ein.", cvLoaded: "{name} ist für diese Sitzung geladen. Lösche ihn vor einem anderen CV.", jobFeed: "Jobbörse", jobFeedSub: "Ziehe frische Stellen, bewerte sie gegen deinen CV und speichere gute Chancen.", freshFeed: "Frischer Feed", role: "Rolle", location: "Ort", minimumSuccess: "Mindesterfolg", postedWithin: "Veröffentlicht in", remoteOnly: "Nur Remote", searchLiveJobs: "Live-Jobs suchen", feedStart: "CV hochladen, um sofort aktuelle Jobs zu laden, oder Rolle eingeben.", searchCleared: "Suche gelöscht. Rolle eingeben, um frische Stellen zu laden.", enterRoleFirst: "Keine Rolle eingegeben. Die App startet mit Studentenjobs und stark nachgefragten Rollen.", pullingJobs: "Frische Jobs werden geladen...", searching: "Suche", liveJobsFailed: "Live-Jobs konnten gerade nicht geladen werden. Verbindung prüfen und erneut versuchen.", zeroRoles: "0 Rollen", roleWordOne: "Rolle", roleWordMany: "Rollen", searchingBoards: "Live-Jobbörsen werden durchsucht...", noCurrentRoles: "Bereit für aktuelle Jobs", emptyFeedBody: "Suche echte ausgeschriebene Jobs nach Rolle und Ort. Lade zuerst einen CV hoch, um Match- und Erfolgswerte zu sehen.", applicationTracker: "Bewerbungs-Tracker", trackerSub: "Bewege Bewerbungen durch jede Phase und entferne alte Einträge.", addApplication: "Bewerbung hinzufügen", jobTitle: "Jobtitel", company: "Unternehmen", status: "Status", link: "Link", contact: "Kontakt", save: "Speichern", statusWishlist: "Wunschliste", statusApplied: "Beworben", statusScreening: "Screening", statusInterview: "Interview", statusOffer: "Angebot", statusRejected: "Abgelehnt", noApplications: "Keine Bewerbungen", openApplyPage: "Bewerbungsseite öffnen", aiCoach: "KI-CV-Coach", aiCoachSub: "Erzeuge sofort jobbezogene CV-Verbesserungen und Anschreiben.", copyOutput: "Ausgabe kopieren", targetRole: "Zielrolle", jobRequirements: "Jobanforderungen", output: "Ausgabe", cvRecommendations: "CV-Empfehlungen", coverLetter: "Anschreiben", both: "Beides", generate: "Generieren", dashboard: "Dashboard", dashboardSub: "Verfolge Fortschritt ohne CV-Text oder Suchverlauf zu speichern.", ready: "Bereit", dataControls: "Datenkontrollen", deleteAllApplications: "Alle Bewerbungen löschen", installableApp: "Installierbare App", installTitle: "JOB RADER HILLARY.21 installieren", installAndroid: "Öffne diese Seite in Chrome, tippe auf das Browsermenü und wähle App installieren oder Zum Startbildschirm hinzufügen.", installIphone: "Öffne diese Seite in Safari, tippe auf Teilen und wähle Zum Home-Bildschirm.", installLaptop: "Öffne diese Seite in Chrome oder Edge und klicke auf das Installationssymbol oder nutze das Browsermenü.", installNote: "Die App ist eine PWA, sodass Phones und Laptops sie direkt aus dem Browser installieren können.", selectedFileNeedsText: "{name} ausgewählt. Füge den CV-Text für detailliertes Matching ein.", fileLoaded: "{name} ist nur im Speicher geladen. Lösche ihn vor dem CV einer anderen Person.", fileReadError: "Die Datei konnte nicht gelesen werden. Füge den CV-Text stattdessen ein.", cvReady: "CV ist bereit. Suche Live-Jobs, um ihn gegen frische Anzeigen zu bewerten.", cvDeleted: "CV gelöscht. Du kannst jetzt sicher einen anderen CV hochladen.", cvAndSearchCleared: "CV und Suchinformationen gelöscht.", confirmFactoryReset: "CV, Suchentwürfe und alle gespeicherten Bewerbungen löschen?", confirmDeleteApps: "Alle gespeicherten Bewerbungen löschen?", updated: "Aktualisiert {time}", savedMetric: "Gespeichert", bestSuccessMetric: "Bester Erfolg", liveAvgMetric: "Live-Schnitt", apply: "Bewerben", cvTips: "CV-Tipps", coverLetterAction: "Anschreiben"
+    languageName: "Deutsch", navUpload: "CV hochladen", navJobs: "Jobbörse", navTracker: "Tracker", navResume: "KI-Lebenslauf", navDashboard: "Dashboard", workspaceEyebrow: "Privater Karrierebereich", languageLabel: "Sprache", themeLabel: "Design", themeLight: "Hell", themeDark: "Dunkel", installApp: "App installieren", clearPrivate: "CV + Suchen löschen", noCvStored: "Kein CV gespeichert", cvInMemory: "CV im Speicher", cvWorkspace: "CV-Arbeitsbereich", cvWorkspaceSub: "Analysiere Rollen mit CV-Text nur im Arbeitsspeicher.", privateMode: "Privater Modus", readyToScore: "Bereit zum Bewerten", cvFile: "CV-Datei", cvText: "CV-Text", cvTextPlaceholder: "CV-Text hier einfügen für stärkere Match-Bewertung.", autoDeleteCv: "CV nach dieser Suche automatisch löschen", analyzeMatches: "Matches analysieren", deleteCv: "CV löschen", privacyActions: "Datenschutzaktionen", clearSearchDrafts: "Suchentwürfe löschen", factoryReset: "App zurücksetzen", uploadNoticeDefault: "CV-Inhalt wird nicht hochgeladen oder im Browser gespeichert.", noCvLoaded: "Kein CV geladen. Lade einen CV hoch oder füge ihn vor dem Matching ein.", cvLoaded: "{name} ist für diese Sitzung geladen. Lösche ihn vor einem anderen CV.", jobFeed: "Jobbörse", jobFeedSub: "Ziehe frische Stellen, bewerte sie gegen deinen CV und speichere gute Chancen.", freshFeed: "Frischer Feed", role: "Rolle", location: "Ort", minimumSuccess: "Mindesterfolg", postedWithin: "Veröffentlicht in", remoteOnly: "Nur Remote", searchLiveJobs: "Live-Jobs suchen", feedStart: "CV hochladen, um sofort aktuelle Jobs zu laden, oder Rolle eingeben.", searchCleared: "Suche gelöscht. Rolle eingeben, um frische Stellen zu laden.", enterRoleFirst: "Gib eine Rolle ein oder lade einen CV hoch, damit die App relevante aktuelle Jobs suchen kann.", pullingJobs: "Frische Jobs werden geladen...", searching: "Suche", liveJobsFailed: "Live-Jobs konnten gerade nicht geladen werden. Verbindung prüfen und erneut versuchen.", zeroRoles: "0 Rollen", roleWordOne: "Rolle", roleWordMany: "Rollen", searchingBoards: "Live-Jobbörsen werden durchsucht...", noCurrentRoles: "Bereit für aktuelle Jobs", emptyFeedBody: "Suche echte ausgeschriebene Jobs nach Rolle und Ort. Lade zuerst einen CV hoch, um Match- und Erfolgswerte zu sehen.", applicationTracker: "Bewerbungs-Tracker", trackerSub: "Bewege Bewerbungen durch jede Phase und entferne alte Einträge.", addApplication: "Bewerbung hinzufügen", jobTitle: "Jobtitel", company: "Unternehmen", status: "Status", link: "Link", contact: "Kontakt", save: "Speichern", statusWishlist: "Wunschliste", statusApplied: "Beworben", statusScreening: "Screening", statusInterview: "Interview", statusOffer: "Angebot", statusRejected: "Abgelehnt", noApplications: "Keine Bewerbungen", openApplyPage: "Bewerbungsseite öffnen", aiCoach: "KI-CV-Coach", aiCoachSub: "Erzeuge sofort jobbezogene CV-Verbesserungen und Anschreiben.", copyOutput: "Ausgabe kopieren", targetRole: "Zielrolle", jobRequirements: "Jobanforderungen", output: "Ausgabe", cvRecommendations: "CV-Empfehlungen", coverLetter: "Anschreiben", both: "Beides", generate: "Generieren", dashboard: "Dashboard", dashboardSub: "Verfolge Fortschritt ohne CV-Text oder Suchverlauf zu speichern.", ready: "Bereit", dataControls: "Datenkontrollen", deleteAllApplications: "Alle Bewerbungen löschen", installableApp: "Installierbare App", installTitle: "JOB RADER HILLARY.21 installieren", installAndroid: "Öffne diese Seite in Chrome, tippe auf das Browsermenü und wähle App installieren oder Zum Startbildschirm hinzufügen.", installIphone: "Öffne diese Seite in Safari, tippe auf Teilen und wähle Zum Home-Bildschirm.", installLaptop: "Öffne diese Seite in Chrome oder Edge und klicke auf das Installationssymbol oder nutze das Browsermenü.", installNote: "Die App ist eine PWA, sodass Phones und Laptops sie direkt aus dem Browser installieren können.", selectedFileNeedsText: "{name} ausgewählt. Füge den CV-Text für detailliertes Matching ein.", fileLoaded: "{name} ist nur im Speicher geladen. Lösche ihn vor dem CV einer anderen Person.", fileReadError: "Die Datei konnte nicht gelesen werden. Füge den CV-Text stattdessen ein.", cvReady: "CV ist bereit. Suche Live-Jobs, um ihn gegen frische Anzeigen zu bewerten.", cvDeleted: "CV gelöscht. Du kannst jetzt sicher einen anderen CV hochladen.", cvAndSearchCleared: "CV und Suchinformationen gelöscht.", confirmFactoryReset: "CV, Suchentwürfe und alle gespeicherten Bewerbungen löschen?", confirmDeleteApps: "Alle gespeicherten Bewerbungen löschen?", updated: "Aktualisiert {time}", savedMetric: "Gespeichert", bestSuccessMetric: "Bester Erfolg", liveAvgMetric: "Live-Schnitt", apply: "Bewerben", cvTips: "CV-Tipps", coverLetterAction: "Anschreiben"
   },
   fr: {
     languageName: "Français", navUpload: "Importer CV", navJobs: "Offres", navTracker: "Suivi", navResume: "CV IA", navDashboard: "Tableau", workspaceEyebrow: "Espace carrière privé", languageLabel: "Langue", themeLabel: "Thème", themeLight: "Clair", themeDark: "Sombre", installApp: "Installer", clearPrivate: "Effacer CV + recherches", noCvStored: "Aucun CV stocké", cvInMemory: "CV en mémoire", cvWorkspace: "Espace CV", cvWorkspaceSub: "Analyse les rôles avec le CV gardé seulement en mémoire.", privateMode: "Mode privé", readyToScore: "Prêt à noter", cvFile: "Fichier CV", cvText: "Texte du CV", autoDeleteCv: "Supprimer le CV après cette recherche", analyzeMatches: "Analyser", deleteCv: "Supprimer CV", privacyActions: "Confidentialité", clearSearchDrafts: "Effacer recherches", factoryReset: "Réinitialiser", uploadNoticeDefault: "Le CV n'est pas téléversé ni stocké dans le navigateur.", noCvLoaded: "Aucun CV chargé. Importez ou collez un CV avant le matching.", jobFeed: "Offres", jobFeedSub: "Charge des offres récentes, les note avec votre CV et sauvegarde les meilleures.", freshFeed: "Flux frais", role: "Rôle", location: "Lieu", minimumSuccess: "Succès minimum", postedWithin: "Publié depuis", remoteOnly: "Télétravail", searchLiveJobs: "Chercher offres live", feedStart: "Importez un CV pour charger immédiatement les offres actuelles, ou saisissez un rôle.", applicationTracker: "Suivi des candidatures", trackerSub: "Déplacez les candidatures par étape et supprimez les anciens dossiers.", addApplication: "Ajouter", company: "Entreprise", status: "Statut", contact: "Contact", save: "Sauver", noApplications: "Aucune candidature", aiCoach: "Coach CV IA", aiCoachSub: "Génère des améliorations CV et une lettre de motivation.", coverLetter: "Lettre", both: "Les deux", generate: "Générer", dashboard: "Tableau", ready: "Prêt", installTitle: "Installer JOB RADER HILLARY.21", apply: "Postuler", cvTips: "Conseils CV"
@@ -342,13 +337,13 @@ for (const [lang, values] of Object.entries(PARTIAL_TRANSLATIONS)) {
 }
 
 const FILTER_TRANSLATIONS = {
-  de: { radiusKm: "Radius", anyDistance: "Jede Entfernung", jobType: "Jobart", partTime: "Teilzeit", studentJob: "Studentenjob", miniJob: "Minijob", fullTime: "Vollzeit", jobAlerts: "E-Mail-Jobalarme", alertEmail: "Alarm-E-Mail", alertName: "Alarmname", createAlert: "Alarm erstellen", deleteAlert: "Alarm löschen", noAlerts: "Noch keine Alarme", posted24Hours: "24 Stunden", feedStart: "CV hochladen, um sofort aktuelle Jobs zu laden, oder Rolle eingeben.", searchCleared: "Suche gelöscht. CV hochladen oder Rolle eingeben, um aktuelle Jobs zu laden.", enterRoleFirst: "Keine Rolle eingegeben. Die App startet mit Studentenjobs und stark nachgefragten Rollen.", autoPullingJobs: "CV erkannt. Aktuelle Jobs werden passend zum CV geladen, Studentenjobs zuerst...", noCurrentRoles: "Bereit für aktuelle Jobs", emptyFeedBody: "CV hochladen und die App lädt automatisch aktuelle Jobs, beginnend mit studentischen Rollen.", languageRequired: "Sprache", languageGerman: "Deutsch", languageEnglish: "Englisch", languageGermanEnglish: "Deutsch + Englisch", languageNotMentioned: "Nicht erwähnt", studentPriority: "Studenten-Priorität", distanceAway: "{distance} km entfernt", distanceUnknown: "Entfernung nicht verifiziert" },
-  fr: { radiusKm: "Rayon", anyDistance: "Toute distance", jobType: "Type d'emploi", partTime: "Temps partiel", studentJob: "Job étudiant", miniJob: "Mini-job", fullTime: "Temps plein", jobAlerts: "Alertes e-mail", alertEmail: "E-mail d'alerte", alertName: "Nom de l'alerte", createAlert: "Créer alerte", deleteAlert: "Supprimer alerte", noAlerts: "Aucune alerte", posted24Hours: "24 heures", noCurrentRoles: "Prêt pour les offres actuelles", languageRequired: "Langue", languageGerman: "Allemand", languageEnglish: "Anglais", languageGermanEnglish: "Allemand + anglais", languageNotMentioned: "Non mentionné", studentPriority: "Priorité étudiant", distanceAway: "{distance} km", distanceUnknown: "Distance non vérifiée" },
-  zh: { radiusKm: "半径", anyDistance: "任意距离", jobType: "工作类型", partTime: "兼职", studentJob: "学生工作", miniJob: "迷你工作", fullTime: "全职", jobAlerts: "邮件提醒", alertEmail: "提醒邮箱", alertName: "提醒名称", createAlert: "创建提醒", deleteAlert: "删除提醒", noAlerts: "暂无提醒", posted24Hours: "24 小时", noCurrentRoles: "准备加载当前职位", languageRequired: "语言", languageGerman: "德语", languageEnglish: "英语", languageGermanEnglish: "德语 + 英语", languageNotMentioned: "未提及", studentPriority: "学生优先", distanceAway: "{distance} 公里", distanceUnknown: "距离未验证" },
-  sw: { radiusKm: "Umbali", anyDistance: "Umbali wowote", jobType: "Aina ya kazi", partTime: "Muda mfupi", studentJob: "Kazi ya mwanafunzi", miniJob: "Mini job", fullTime: "Muda wote", jobAlerts: "Arifa za barua pepe", alertEmail: "Barua pepe", alertName: "Jina la arifa", createAlert: "Tengeneza Arifa", deleteAlert: "Futa arifa", noAlerts: "Hakuna arifa", posted24Hours: "Saa 24", noCurrentRoles: "Tayari kwa ajira mpya", languageRequired: "Lugha", languageGerman: "Kijerumani", languageEnglish: "Kiingereza", languageGermanEnglish: "Kijerumani + Kiingereza", languageNotMentioned: "Haijatajwa", studentPriority: "Kipaumbele cha wanafunzi", distanceAway: "{distance} km mbali", distanceUnknown: "Umbali haujathibitishwa" },
-  hi: { radiusKm: "दायरा", anyDistance: "कोई भी दूरी", jobType: "नौकरी का प्रकार", partTime: "पार्ट टाइम", studentJob: "स्टूडेंट जॉब", miniJob: "मिनी जॉब", fullTime: "फुल टाइम", jobAlerts: "ईमेल जॉब अलर्ट", alertEmail: "अलर्ट ईमेल", alertName: "अलर्ट नाम", createAlert: "अलर्ट बनाएं", deleteAlert: "अलर्ट हटाएं", noAlerts: "कोई अलर्ट नहीं", posted24Hours: "24 घंटे", noCurrentRoles: "लाइव नौकरियों के लिए तैयार", languageRequired: "भाषा", languageGerman: "जर्मन", languageEnglish: "अंग्रेज़ी", languageGermanEnglish: "जर्मन + अंग्रेज़ी", languageNotMentioned: "नहीं बताया गया", studentPriority: "स्टूडेंट प्राथमिकता", distanceAway: "{distance} किमी दूर", distanceUnknown: "दूरी सत्यापित नहीं" },
-  pt: { radiusKm: "Raio", anyDistance: "Qualquer distância", jobType: "Tipo de vaga", partTime: "Meio período", studentJob: "Vaga de estudante", miniJob: "Mini job", fullTime: "Tempo integral", jobAlerts: "Alertas por e-mail", alertEmail: "E-mail do alerta", alertName: "Nome do alerta", createAlert: "Criar alerta", deleteAlert: "Excluir alerta", noAlerts: "Sem alertas", posted24Hours: "24 horas", noCurrentRoles: "Pronto para vagas atuais", languageRequired: "Idioma", languageGerman: "Alemão", languageEnglish: "Inglês", languageGermanEnglish: "Alemão + inglês", languageNotMentioned: "Não mencionado", studentPriority: "Prioridade estudante", distanceAway: "{distance} km de distância", distanceUnknown: "Distância não verificada" },
-  ar: { radiusKm: "النطاق", anyDistance: "أي مسافة", jobType: "نوع الوظيفة", partTime: "دوام جزئي", studentJob: "وظيفة طالب", miniJob: "عمل صغير", fullTime: "دوام كامل", jobAlerts: "تنبيهات البريد", alertEmail: "بريد التنبيه", alertName: "اسم التنبيه", createAlert: "إنشاء تنبيه", deleteAlert: "حذف التنبيه", noAlerts: "لا توجد تنبيهات", posted24Hours: "24 ساعة", noCurrentRoles: "جاهز للوظائف الحالية", languageRequired: "اللغة", languageGerman: "الألمانية", languageEnglish: "الإنجليزية", languageGermanEnglish: "الألمانية + الإنجليزية", languageNotMentioned: "غير مذكور", studentPriority: "أولوية الطلاب", distanceAway: "{distance} كم", distanceUnknown: "المسافة غير مؤكدة" }
+  de: { radiusKm: "Radius", anyDistance: "Jede Entfernung", jobType: "Jobart", partTime: "Teilzeit", studentJob: "Studentenjob", miniJob: "Minijob", fullTime: "Vollzeit", jobAlerts: "E-Mail-Jobalarme", alertEmail: "Alarm-E-Mail", alertName: "Alarmname", createAlert: "Alarm erstellen", deleteAlert: "Alarm löschen", noAlerts: "Noch keine Alarme", posted24Hours: "24 Stunden", feedStart: "CV hochladen, um sofort aktuelle Jobs zu laden, oder Rolle eingeben.", searchCleared: "Suche gelöscht. CV hochladen oder Rolle eingeben, um aktuelle Jobs zu laden.", enterRoleFirst: "Gib eine Rolle ein oder lade einen CV hoch, damit die App relevante aktuelle Jobs suchen kann.", autoPullingJobs: "CV erkannt. Aktuelle Jobs werden passend zum CV geladen...", noCurrentRoles: "Bereit für aktuelle Jobs", emptyFeedBody: "CV hochladen und die App lädt passende aktuelle Jobs aus allen Jobtypen.", languageRequired: "Sprache", languageGerman: "Deutsch", languageEnglish: "Englisch", languageGermanEnglish: "Deutsch + Englisch", languageNotMentioned: "Nicht erwähnt", distanceAway: "{distance} km entfernt", distanceUnknown: "Entfernung nicht verifiziert" },
+  fr: { radiusKm: "Rayon", anyDistance: "Toute distance", jobType: "Type d'emploi", partTime: "Temps partiel", studentJob: "Job étudiant", miniJob: "Mini-job", fullTime: "Temps plein", jobAlerts: "Alertes e-mail", alertEmail: "E-mail d'alerte", alertName: "Nom de l'alerte", createAlert: "Créer alerte", deleteAlert: "Supprimer alerte", noAlerts: "Aucune alerte", posted24Hours: "24 heures", noCurrentRoles: "Prêt pour les offres actuelles", languageRequired: "Langue", languageGerman: "Allemand", languageEnglish: "Anglais", languageGermanEnglish: "Allemand + anglais", languageNotMentioned: "Non mentionné", distanceAway: "{distance} km", distanceUnknown: "Distance non vérifiée" },
+  zh: { radiusKm: "半径", anyDistance: "任意距离", jobType: "工作类型", partTime: "兼职", studentJob: "学生工作", miniJob: "迷你工作", fullTime: "全职", jobAlerts: "邮件提醒", alertEmail: "提醒邮箱", alertName: "提醒名称", createAlert: "创建提醒", deleteAlert: "删除提醒", noAlerts: "暂无提醒", posted24Hours: "24 小时", noCurrentRoles: "准备加载当前职位", languageRequired: "语言", languageGerman: "德语", languageEnglish: "英语", languageGermanEnglish: "德语 + 英语", languageNotMentioned: "未提及", distanceAway: "{distance} 公里", distanceUnknown: "距离未验证" },
+  sw: { radiusKm: "Umbali", anyDistance: "Umbali wowote", jobType: "Aina ya kazi", partTime: "Muda mfupi", studentJob: "Kazi ya mwanafunzi", miniJob: "Mini job", fullTime: "Muda wote", jobAlerts: "Arifa za barua pepe", alertEmail: "Barua pepe", alertName: "Jina la arifa", createAlert: "Tengeneza Arifa", deleteAlert: "Futa arifa", noAlerts: "Hakuna arifa", posted24Hours: "Saa 24", noCurrentRoles: "Tayari kwa ajira mpya", languageRequired: "Lugha", languageGerman: "Kijerumani", languageEnglish: "Kiingereza", languageGermanEnglish: "Kijerumani + Kiingereza", languageNotMentioned: "Haijatajwa", distanceAway: "{distance} km mbali", distanceUnknown: "Umbali haujathibitishwa" },
+  hi: { radiusKm: "दायरा", anyDistance: "कोई भी दूरी", jobType: "नौकरी का प्रकार", partTime: "पार्ट टाइम", studentJob: "स्टूडेंट जॉब", miniJob: "मिनी जॉब", fullTime: "फुल टाइम", jobAlerts: "ईमेल जॉब अलर्ट", alertEmail: "अलर्ट ईमेल", alertName: "अलर्ट नाम", createAlert: "अलर्ट बनाएं", deleteAlert: "अलर्ट हटाएं", noAlerts: "कोई अलर्ट नहीं", posted24Hours: "24 घंटे", noCurrentRoles: "लाइव नौकरियों के लिए तैयार", languageRequired: "भाषा", languageGerman: "जर्मन", languageEnglish: "अंग्रेज़ी", languageGermanEnglish: "जर्मन + अंग्रेज़ी", languageNotMentioned: "नहीं बताया गया", distanceAway: "{distance} किमी दूर", distanceUnknown: "दूरी सत्यापित नहीं" },
+  pt: { radiusKm: "Raio", anyDistance: "Qualquer distância", jobType: "Tipo de vaga", partTime: "Meio período", studentJob: "Vaga de estudante", miniJob: "Mini job", fullTime: "Tempo integral", jobAlerts: "Alertas por e-mail", alertEmail: "E-mail do alerta", alertName: "Nome do alerta", createAlert: "Criar alerta", deleteAlert: "Excluir alerta", noAlerts: "Sem alertas", posted24Hours: "24 horas", noCurrentRoles: "Pronto para vagas atuais", languageRequired: "Idioma", languageGerman: "Alemão", languageEnglish: "Inglês", languageGermanEnglish: "Alemão + inglês", languageNotMentioned: "Não mencionado", distanceAway: "{distance} km de distância", distanceUnknown: "Distância não verificada" },
+  ar: { radiusKm: "النطاق", anyDistance: "أي مسافة", jobType: "نوع الوظيفة", partTime: "دوام جزئي", studentJob: "وظيفة طالب", miniJob: "عمل صغير", fullTime: "دوام كامل", jobAlerts: "تنبيهات البريد", alertEmail: "بريد التنبيه", alertName: "اسم التنبيه", createAlert: "إنشاء تنبيه", deleteAlert: "حذف التنبيه", noAlerts: "لا توجد تنبيهات", posted24Hours: "24 ساعة", noCurrentRoles: "جاهز للوظائف الحالية", languageRequired: "اللغة", languageGerman: "الألمانية", languageEnglish: "الإنجليزية", languageGermanEnglish: "الألمانية + الإنجليزية", languageNotMentioned: "غير مذكور", distanceAway: "{distance} كم", distanceUnknown: "المسافة غير مؤكدة" }
 };
 
 for (const [lang, values] of Object.entries(FILTER_TRANSLATIONS)) {
@@ -720,9 +715,9 @@ async function searchLiveJobs() {
       await runAutoSearchFromCv({ force: true });
       return;
     }
-    $("#roleSearch").value = "Werkstudent";
     $("#feedStatus").textContent = t("enterRoleFirst");
-    await searchLiveJobs();
+    $("#resultCount").textContent = t("freshFeed");
+    renderJobs([]);
     return;
   }
 
@@ -759,7 +754,7 @@ async function searchLiveJobs() {
       sources: sourceText,
       time: latestPayload.generatedAt ? new Date(latestPayload.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     });
-    if (relaxedMinimum) {
+    if (jobs.length && relaxedMinimum) {
       $("#feedStatus").textContent += ` ${t("minimumRelaxed")}`;
     }
 
@@ -802,7 +797,7 @@ async function runAutoSearchFromCv(options = {}) {
       types: criteria.types,
       minimum: criteria.minimum,
       includeFallbacks: true,
-      allowDifferentRoleFallbacks: true,
+      allowDifferentRoleFallbacks: !cvRole,
       strictCv: options.strict !== false,
       typedRole: cvRole
     });
@@ -820,10 +815,10 @@ async function runAutoSearchFromCv(options = {}) {
       sources: sourceText,
       time: new Date(latestTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     });
-    if (usedFallbacks) {
+    if (jobs.length && usedFallbacks) {
       $("#feedStatus").textContent += ` ${t("fallbackJobsLoaded")}`;
     }
-    if (relaxedMinimum) {
+    if (jobs.length && relaxedMinimum) {
       $("#feedStatus").textContent += ` ${t("minimumRelaxed")}`;
     }
     if ($("#autoDeleteCv").checked) {
@@ -917,6 +912,7 @@ async function loadLiveJobsWithFallback({ queries, location, radiusKm, days, rem
       .filter((job) => Number(job.match || 0) >= 18)
       .filter((job) => Number(job.evidenceCount || 0) >= 1)
       .filter((job) => !typedRole || job.roleAligned)
+      .filter((job) => !typedRole || job.titleAligned || Number(job.match || 0) >= 50)
       .slice(0, 20);
     relaxedMinimum = Boolean(filtered.length);
   }
@@ -949,6 +945,9 @@ function filterRelevantJobs(scored, { minimum = 0, strictCv = false, typedRole =
       return false;
     }
     if (hasTypedRole && !job.roleAligned && match < (relaxed ? 45 : 55)) {
+      return false;
+    }
+    if (hasTypedRole && !job.titleAligned && match < 50) {
       return false;
     }
     return true;
@@ -1010,28 +1009,22 @@ function cleanRoleQuery(role) {
 function deriveAutoSearchQueries(cvText) {
   const primaryRole = derivePrimaryCvRole(cvText);
   const primaryRoleQueries = primaryRole ? buildManualSearchQueries(primaryRole) : [];
-  const studentRoleQueries = primaryRoleQueries
-    .filter((query) => !isStudentFriendlyText(query))
-    .map((query) => `Werkstudent ${query}`);
   const text = cvText.toLowerCase();
   const cvWords = new Set(meaningfulTokens(cvText));
   const matchingTitles = HIGH_FREQUENCY_GERMANY_JOB_TITLES.filter((title) => {
-    const words = meaningfulTokens(title);
-    return words.some((word) => cvWords.has(word) || (word.length > 8 && text.includes(word)));
+    return titleMatchesCv(title, cvWords, text);
   });
-  const studentMatches = matchingTitles.filter((title) => isStudentFriendlyText(title));
-  const professionalMatches = matchingTitles.filter((title) => !isStudentFriendlyText(title));
   const keywords = getImportantKeywords(cvText, []).slice(0, 8);
-  const keywordQueries = keywords
-    .map((keyword) => `Werkstudent ${keyword}`)
-    .filter((query) => query.length > 14);
+  const keywordQueries = primaryRoleQueries.length
+    ? []
+    : keywords.filter((keyword) => keyword.length > 3 && !isStudentIntentWord(keyword));
+  const matchingTitleQueries = primaryRoleQueries.length ? [] : matchingTitles;
+  const fallbackQueries = primaryRoleQueries.length ? [] : AUTO_FALLBACK_QUERIES;
   return unique([
-    ...studentRoleQueries,
     ...primaryRoleQueries,
-    ...professionalMatches,
-    ...studentMatches,
+    ...matchingTitleQueries,
     ...keywordQueries,
-    ...AUTO_FALLBACK_QUERIES
+    ...fallbackQueries
   ]).slice(0, 12);
 }
 
@@ -1044,38 +1037,23 @@ function derivePrimaryCvRole(cvText) {
   }
   const cvWords = new Set(meaningfulTokens(text));
   const matchingTitles = HIGH_FREQUENCY_GERMANY_JOB_TITLES.filter((title) => {
-    const words = meaningfulTokens(title);
-    return words.some((word) => cvWords.has(word) || (word.length > 8 && lower.includes(word)));
+    return titleMatchesCv(title, cvWords, lower);
   });
-  const professional = matchingTitles.find((title) => !isStudentFriendlyText(title));
-  if (professional) {
-    return professional;
-  }
-  const student = matchingTitles.find((title) => isStudentFriendlyText(title));
-  if (student) {
-    return student;
+  const title = matchingTitles[0];
+  if (title) {
+    return title;
   }
   const keyword = getImportantKeywords(text, []).find((word) => !isStudentIntentWord(word));
-  return keyword ? `Werkstudent ${keyword}` : "Werkstudent";
+  return keyword || "";
 }
 
-function isStudentFriendlyText(value) {
-  return /(werkstudent|working student|studentenjob|studentische|studierende|\bstudent\b|\bstudents\b|\bhiwi\b|\baushilfe\b|\bminijob\b|\bteilzeit\b|\bpraktikum\b|internship|\btrainee\b|\bnebenjob\b|\bferienjob\b|\bhelper\b|\bhelfer\b|\bhilfe\b)/i.test(value);
-}
-
-function studentPriorityScore(job) {
-  const text = `${job.title} ${job.summary} ${job.description} ${(job.tags || []).join(" ")} ${(job.jobTypes || []).join(" ")}`;
-  let score = isStudentFriendlyText(text) ? 22 : 0;
-  if ((job.jobTypes || []).includes("student-job")) {
-    score += 22;
+function titleMatchesCv(title, cvWords, cvText) {
+  const words = meaningfulTokens(title);
+  const hits = words.filter((word) => cvWords.has(word) || (word.length > 8 && cvText.includes(word))).length;
+  if (words.length <= 1) {
+    return hits > 0 && words.some((word) => word.length >= 9);
   }
-  if ((job.jobTypes || []).includes("mini-job") || (job.jobTypes || []).includes("part-time")) {
-    score += 10;
-  }
-  if (/vollzeit|full[\s-]?time/i.test(text) && !isStudentFriendlyText(text)) {
-    score -= 8;
-  }
-  return score;
+  return hits >= Math.min(2, words.length);
 }
 
 function languageLabel(job) {
@@ -1219,16 +1197,12 @@ function scoreJobs(jobs, criteria = getCurrentSearchCriteria()) {
   return jobs
     .map((job) => {
       const analysis = analyzeJobAgainstCv(job, criteria);
-      return { ...job, ...analysis, studentPriority: studentPriorityScore(job), languageRequirement: job.languageRequirement || detectLanguageRequirement(job) };
+      return { ...job, ...analysis, languageRequirement: job.languageRequirement || detectLanguageRequirement(job) };
     })
     .sort((a, b) => {
       const weightedDiff = weightedMatchValue(b, criteria) - weightedMatchValue(a, criteria);
       if (weightedDiff) {
         return weightedDiff;
-      }
-      const studentDiff = Number(b.studentPriority || 0) - Number(a.studentPriority || 0);
-      if (studentDiff) {
-        return studentDiff;
       }
       const scoreDiff = Number(b.match || 0) - Number(a.match || 0);
       if (scoreDiff) {
@@ -1239,9 +1213,7 @@ function scoreJobs(jobs, criteria = getCurrentSearchCriteria()) {
 }
 
 function weightedMatchValue(job, criteria = {}) {
-  const match = Number(job.match || 0);
-  const studentBoost = Math.min(Number(job.studentPriority || 0), criteria.role && !job.roleAligned ? 8 : 18);
-  return match + studentBoost;
+  return Number(job.match || 0);
 }
 
 function refreshScoredJobs() {
@@ -1262,6 +1234,7 @@ function analyzeJobAgainstCv(job, criteria = {}) {
   const titleText = String(job.title || "").toLowerCase();
   const cvConcepts = new Set(expandRoleWords(meaningfulTokens(rawCv)));
   const jobConcepts = new Set(expandRoleWords(meaningfulTokens(rawJob)));
+  const titleConcepts = new Set(expandRoleWords(meaningfulTokens(job.title)));
   const cvKeywords = getImportantKeywords(rawCv, []).slice(0, 22);
   const jobKeywords = getImportantKeywords(rawJob, job.tags || []);
   const roleWords = meaningfulTokens(criteria.role || "");
@@ -1276,6 +1249,7 @@ function analyzeJobAgainstCv(job, criteria = {}) {
       missing: jobKeywords.slice(0, 8),
       recommendations: [t("noCvRecommendation")],
       roleAligned: true,
+      titleAligned: true,
       evidenceCount: 0
     };
   }
@@ -1285,31 +1259,28 @@ function analyzeJobAgainstCv(job, criteria = {}) {
   const missing = jobKeywords.filter((word) => !matchesConcept(word, cvText, cvConcepts));
   const titleHits = meaningfulTokens(job.title).filter((word) => matchesConcept(word, cvText, cvConcepts)).length;
   const roleGroupHits = roleGroups.filter((group) => groupMatchesText(group, jobText, jobConcepts));
-  const roleTitleHits = roleGroups.filter((group) => groupMatchesText(group, titleText, jobConcepts)).length;
+  const roleTitleHits = roleGroups.filter((group) => groupMatchesText(group, titleText, titleConcepts)).length;
   const specialistRoleHits = specialistRoleGroups.filter((group) => groupMatchesText(group, jobText, jobConcepts)).length;
+  const specialistTitleHits = specialistRoleGroups.filter((group) => groupMatchesText(group, titleText, titleConcepts)).length;
   const specialistAligned = !specialistRoleGroups.length || specialistRoleHits === specialistRoleGroups.length;
+  const titleAligned = !specialistRoleGroups.length || specialistTitleHits > 0;
   const roleCoverage = roleGroups.length ? roleGroupHits.length / roleGroups.length : 1;
   const roleAligned = specialistAligned && (!roleGroups.length || roleCoverage >= 0.5 || roleTitleHits > 0);
   const cvCoverage = Math.min(1, matchedCvKeywords.length / Math.max(1, Math.min(cvKeywords.length, 14)));
   const jobCoverage = Math.min(1, matchedJobKeywords.length / Math.max(1, Math.min(jobKeywords.length, 14)));
-  const studentFit = isStudentFriendlyText(cvText) && isStudentFriendlyText(jobText);
   const evidenceCount = unique([...matchedCvKeywords, ...matchedJobKeywords]).length + titleHits + roleGroupHits.length;
 
   let score = Math.round(
     Math.min(35, cvCoverage * 35) +
     Math.min(25, jobCoverage * 25) +
     Math.min(20, titleHits * 5 + roleTitleHits * 8) +
-    Math.min(14, roleCoverage * 14) +
-    (studentFit ? 6 : 0)
+    Math.min(14, roleCoverage * 14)
   );
   if (roleGroups.length && !roleAligned) {
     score = Math.min(score, 32);
   }
   if (evidenceCount < 2) {
     score = Math.min(score, 29);
-  }
-  if (isStudentFriendlyText(cvText) && /vollzeit|full[\s-]?time/i.test(jobText) && !isStudentFriendlyText(jobText)) {
-    score = Math.min(score, 58);
   }
   score = Math.max(0, Math.min(100, score));
   const matched = unique([...matchedCvKeywords, ...matchedJobKeywords]);
@@ -1322,6 +1293,7 @@ function analyzeJobAgainstCv(job, criteria = {}) {
     missing: missing.slice(0, 10),
     recommendations,
     roleAligned,
+    titleAligned,
     evidenceCount
   };
 }
@@ -1438,7 +1410,6 @@ function renderJobs(jobs, options = {}) {
         <span class="tag match">${job.match == null ? t("cvNeeded") : t("percentMatch", { score: job.match })}</span>
         <span class="tag source">${escapeHtml(job.interestLabel || t("interestNotPublished"))}</span>
         <span class="tag language">${escapeHtml(t("languageRequired"))}: ${escapeHtml(languageLabel(job))}</span>
-        ${Number(job.studentPriority || 0) > 0 ? `<span class="tag student">${escapeHtml(t("studentPriority"))}</span>` : ""}
         ${Number.isFinite(job.distanceKm) ? `<span class="tag">${escapeHtml(t("distanceAway", { distance: job.distanceKm }))}</span>` : ""}
         ${job.salary ? `<span class="tag">${escapeHtml(job.salary)}</span>` : ""}
         ${(job.jobTypes || []).slice(0, 3).map((type) => `<span class="tag">${escapeHtml(jobTypeLabel(type))}</span>`).join("")}
