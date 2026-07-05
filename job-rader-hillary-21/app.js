@@ -5,6 +5,7 @@ const STATUSES = ["Wishlist", "Applied", "Screening", "Interview", "Offer", "Rej
 const PRIVATE_KEY_MATCHERS = [/cv/i, /resume/i, /search/i, /query/i, /history/i, /profile/i, /document/i];
 const JOBS_ENDPOINT = "/.netlify/functions/jobs";
 const ALERTS_ENDPOINT = "/.netlify/functions/alerts";
+const LOCATION_ENDPOINT = "/.netlify/functions/location";
 const LANGUAGE_KEY = "jrh21.language";
 const THEME_KEY = "jrh21.theme";
 const ALERTS_KEY = "jrh21.jobAlerts.v1";
@@ -12,6 +13,8 @@ const AUTO_SEARCH_MIN_CV_CHARS = 80;
 const DEFAULT_RADIUS_KM = 250;
 const STRICT_CV_MATCH_SCORE = 35;
 const RELAXED_CV_MATCH_SCORE = 24;
+const PDFJS_LIB_URL = "./assets/pdf.min.mjs";
+const PDFJS_WORKER_URL = "./assets/pdf.worker.min.mjs";
 const HIGH_FREQUENCY_GERMANY_JOB_TITLES = [
   "Küchenhilfe", "Spülkraft", "Kellner", "Barista", "Verkäufer", "Kassierer", "Reinigungskraft",
   "Lieferfahrer", "Fahrradkurier", "Call-Center-Agent", "Kundenservice", "Bürohilfe", "Datenerfasser",
@@ -22,7 +25,8 @@ const HIGH_FREQUENCY_GERMANY_JOB_TITLES = [
   "Produktionsingenieur", "Qualitätsingenieur", "Automatisierungsingenieur", "Bauingenieur", "CAD Konstrukteur",
   "Techniker", "Mechatroniker", "Elektroniker", "Pflegefachkraft", "Pflegehelfer", "Medizinische Fachangestellte",
   "Physiotherapeut", "Laborant", "Lagerarbeiter", "Lagermitarbeiter", "Kommissionierer", "Verpacker",
-  "Staplerfahrer", "Logistikmitarbeiter", "Versandmitarbeiter", "LKW Fahrer", "Kurierfahrer", "Disponent",
+  "Staplerfahrer", "Logistikmitarbeiter", "Versandmitarbeiter", "LKW Fahrer", "Kurierfahrer", "Paketzusteller",
+  "Auslieferungsfahrer", "Zusteller", "Fahrer", "Delivery Driver", "Disponent",
   "Koch", "Restaurantmitarbeiter", "Hotelmitarbeiter", "Rezeptionist", "Housekeeping", "Filialmitarbeiter",
   "Verkaufsberater", "Kundenberater", "Sales Manager", "Account Manager", "Sachbearbeiter", "Büroassistent",
   "Teamassistenz", "Projektassistenz", "Recruiter", "Buchhalter", "Controller", "Bauarbeiter", "Elektriker",
@@ -35,7 +39,8 @@ const HIGH_FREQUENCY_GERMANY_JOB_TITLES = [
 ];
 const AUTO_FALLBACK_QUERIES = [
   "Kundenservice", "Verkäufer", "Bürohilfe", "Lagerhelfer", "Reinigungskraft", "Data Analyst",
-  "Softwareentwickler", "Bauingenieur", "Pflegehelfer", "Produktionsmitarbeiter", "Koch", "Kassierer"
+  "Softwareentwickler", "Bauingenieur", "Pflegehelfer", "Produktionsmitarbeiter", "Lieferfahrer",
+  "Logistik", "Koch", "Kassierer"
 ];
 const GERMANY_CITY_HINTS = [
   "Berlin", "Hamburg", "Munich", "München", "Cologne", "Köln", "Frankfurt", "Stuttgart", "Düsseldorf",
@@ -75,6 +80,19 @@ const ROLE_WORD_SYNONYMS = {
   pflege: ["nursing", "care"],
   logistics: ["logistik", "lager"],
   logistik: ["logistics", "warehouse"],
+  dhl: ["lieferfahrer", "lieferung", "kurier", "fahrradkurier", "paketzusteller", "zusteller", "postbote", "paket", "pakete", "briefe", "auslieferungsfahrer", "delivery", "logistik"],
+  delivery: ["lieferung", "lieferfahrer", "kurier", "fahrradkurier", "paketzusteller", "auslieferungsfahrer", "zusteller"],
+  lieferfahrer: ["delivery", "driver", "kurier", "fahrradkurier", "auslieferungsfahrer", "zusteller"],
+  lieferung: ["delivery", "lieferfahrer", "kurier"],
+  kurier: ["courier", "delivery", "lieferfahrer"],
+  fahrradkurier: ["bike", "courier", "delivery", "lieferfahrer"],
+  paketzusteller: ["parcel", "paket", "pakete", "delivery", "lieferfahrer", "zusteller", "postbote"],
+  zusteller: ["delivery", "paketzusteller", "lieferfahrer", "postbote", "paket"],
+  auslieferungsfahrer: ["delivery", "lieferfahrer", "fahrer", "kurier"],
+  postbote: ["post", "paket", "pakete", "briefe", "zusteller", "delivery"],
+  paket: ["parcel", "pakete", "paketzusteller", "postbote", "delivery"],
+  fahrer: ["driver", "lieferfahrer", "delivery", "auslieferungsfahrer"],
+  driver: ["fahrer", "delivery", "lieferfahrer", "auslieferungsfahrer"],
   student: ["werkstudent", "studentenjob", "praktikum", "internship"],
   werkstudent: ["student", "studentenjob", "working student"],
   internship: ["praktikum", "intern"],
@@ -90,6 +108,7 @@ const MANUAL_QUERY_EXPANSIONS = [
   { test: /\belectrical\b|elektro/i, queries: ["Elektroingenieur", "Elektrotechnik", "electrical engineer"] },
   { test: /\bsoftware|developer|entwickler/i, queries: ["Softwareentwickler", "Softwareentwicklung", "developer"] },
   { test: /\bdata|analyst|analytics|analyse/i, queries: ["Data Analyst", "Datenanalyse"] },
+  { test: /\bdhl\b|delivery|liefer|kurier|courier|fahrer|fahrrad|bike|paket|zustell/i, queries: ["Lieferfahrer", "Fahrradkurier", "Kurierfahrer", "Paketzusteller", "Auslieferungsfahrer", "Logistik", "Lagerhelfer"] },
   { test: /\blogistics|warehouse|logistik|lager/i, queries: ["Logistik", "Lagerhelfer"] },
   { test: /\bnursing|care|pflege/i, queries: ["Pflegehilfskraft", "Pflegefachkraft", "care assistant"] },
   { test: /\bstudent|werkstudent|studentenjob/i, queries: ["Studentenjob", "Praktikum"] },
@@ -143,6 +162,11 @@ const TRANSLATIONS = {
     remoteOnly: "Remote only",
     radiusKm: "Radius",
     anyDistance: "Any distance",
+    useMyLocation: "Use my location",
+    locationDetecting: "Detecting your current region...",
+    locationReady: "Location set to {location}. Jobs will be pulled from this region.",
+    locationUnavailable: "Location could not be detected. Enter a postal code or city instead.",
+    locationPermissionDenied: "Location permission was denied. Enter a postal code or city instead.",
     jobType: "Job type",
     partTime: "Part time",
     studentJob: "Student job",
@@ -235,6 +259,9 @@ const TRANSLATIONS = {
     installLaptop: "Open this site in Chrome or Edge and click the install icon in the address bar, or use the browser menu and choose Install.",
     installNote: "The app is a PWA, so phones and laptops install it from the browser without needing an app-store download.",
     selectedFileNeedsText: "Selected {name}. Paste the CV text for detailed matching and instant recommendations.",
+    readingPdf: "Reading text from {name}...",
+    pdfTextLoaded: "{name} text was extracted in this browser and is ready for matching.",
+    pdfTextMissing: "The app could not read useful text from {name}. Paste the CV text instead.",
     fileLoaded: "{name} is loaded in memory only. Delete it before uploading another person's CV.",
     fileReadError: "The file could not be read. Paste the CV text instead.",
     cvReady: "CV is ready. Search live jobs to score it against fresh listings.",
@@ -372,6 +399,7 @@ let selectedJob = null;
 let autoSearchTimer = null;
 let lastAutoCvSignature = "";
 let activeSearchToken = 0;
+let pdfjsPromise = null;
 let applications = loadApplications();
 let jobAlerts = loadJobAlerts();
 let currentLanguage = loadPreference(LANGUAGE_KEY, "en");
@@ -441,6 +469,11 @@ function applyTranslations() {
   });
   $$("[data-i18n-placeholder]").forEach((node) => {
     node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder));
+  });
+  $$("[data-i18n-title]").forEach((node) => {
+    const label = t(node.dataset.i18nTitle);
+    node.setAttribute("title", label);
+    node.setAttribute("aria-label", label);
   });
   $("#languageSelect").value = currentLanguage;
   $("#themeSelect").value = currentTheme;
@@ -546,24 +579,48 @@ function bindCvControls() {
   $("#factoryResetButton").addEventListener("click", factoryReset);
 }
 
-function handleFileSelection(event) {
+async function handleFileSelection(event) {
   const file = event.target.files?.[0];
   if (!file) {
     return;
   }
 
   const textArea = $("#cvText");
+  const pdfFriendly = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
   const textFriendly = /\.(txt|md|csv)$/i.test(file.name) || file.type.startsWith("text/");
-  cvMemory = {
-    name: file.name,
-    text: textArea.value.trim(),
-    updatedAt: new Date().toISOString()
-  };
+  textArea.value = "";
+  cvMemory = null;
+  updatePrivacyStatus();
+
+  if (pdfFriendly) {
+    try {
+      setNotice(t("readingPdf", { name: file.name }));
+      const text = await extractPdfText(file);
+      if (!text || text.length < 40) {
+        throw new Error("No useful text extracted from PDF.");
+      }
+      textArea.value = text;
+      cvMemory = {
+        name: file.name,
+        text,
+        updatedAt: new Date().toISOString()
+      };
+      refreshScoredJobs();
+      setNotice(t("pdfTextLoaded", { name: file.name }));
+      updatePrivacyStatus();
+      scheduleAutoSearchFromCv({ immediate: true });
+    } catch (error) {
+      textArea.value = "";
+      cvMemory = null;
+      setNotice(t("pdfTextMissing", { name: file.name }));
+      updatePrivacyStatus();
+    }
+    return;
+  }
 
   if (!textFriendly) {
     setNotice(t("selectedFileNeedsText", { name: file.name }));
     updatePrivacyStatus();
-    scheduleAutoSearchFromCv({ immediate: true });
     return;
   }
 
@@ -581,8 +638,50 @@ function handleFileSelection(event) {
     updatePrivacyStatus();
     scheduleAutoSearchFromCv({ immediate: true });
   };
-  reader.onerror = () => setNotice(t("fileReadError"));
+  reader.onerror = () => {
+    cvMemory = null;
+    updatePrivacyStatus();
+    setNotice(t("fileReadError"));
+  };
   reader.readAsText(file);
+}
+
+async function loadPdfJs() {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import(PDFJS_LIB_URL).then((pdfjs) => {
+      pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+      return pdfjs;
+    });
+  }
+  return pdfjsPromise;
+}
+
+async function extractPdfText(file) {
+  const pdfjs = await loadPdfJs();
+  const data = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data }).promise;
+  const pages = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    const lines = [];
+    let lastY = null;
+    let line = [];
+    content.items.forEach((item) => {
+      const y = Math.round(item.transform?.[5] || 0);
+      if (lastY !== null && Math.abs(y - lastY) > 4 && line.length) {
+        lines.push(line.join(" ").replace(/\s+/g, " ").trim());
+        line = [];
+      }
+      line.push(item.str || "");
+      lastY = y;
+    });
+    if (line.length) {
+      lines.push(line.join(" ").replace(/\s+/g, " ").trim());
+    }
+    pages.push(lines.filter(Boolean).join("\n"));
+  }
+  return pages.join("\n\n").replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function deleteCv(options = {}) {
@@ -642,6 +741,68 @@ function bindJobSearch() {
     event.preventDefault();
     await searchLiveJobs();
   });
+  $("#useLocationButton").addEventListener("click", useBrowserLocation);
+}
+
+async function useBrowserLocation() {
+  const button = $("#useLocationButton");
+  if (!navigator.geolocation) {
+    $("#feedStatus").textContent = t("locationUnavailable");
+    return;
+  }
+
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "...";
+  $("#feedStatus").textContent = t("locationDetecting");
+
+  try {
+    const position = await getCurrentPosition();
+    const location = await reverseBrowserLocation(position.coords.latitude, position.coords.longitude);
+    if (!location) {
+      throw new Error("No usable address returned.");
+    }
+    $("#locationSearch").value = location;
+    if (!Number($("#radiusKm").value || 0)) {
+      $("#radiusKm").value = String(DEFAULT_RADIUS_KM);
+    }
+    $("#feedStatus").textContent = t("locationReady", { location });
+    if (cvMemory?.text?.trim()) {
+      await runAutoSearchFromCv({ force: true });
+    } else if ($("#roleSearch").value.trim()) {
+      await searchLiveJobs();
+    }
+  } catch (error) {
+    $("#feedStatus").textContent = error?.code === 1
+      ? t("locationPermissionDenied")
+      : t("locationUnavailable");
+  } finally {
+    button.disabled = false;
+    button.textContent = originalText;
+  }
+}
+
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 10 * 60 * 1000
+    });
+  });
+}
+
+async function reverseBrowserLocation(latitude, longitude) {
+  const params = new URLSearchParams({
+    lat: String(latitude),
+    lon: String(longitude)
+  });
+  const response = await fetch(`${LOCATION_ENDPOINT}?${params.toString()}`, { cache: "no-store" });
+  if (!response.ok) {
+    return "";
+  }
+  const payload = await response.json();
+  return payload.location || "";
 }
 
 function scheduleAutoSearchFromCv(options = {}) {
@@ -1213,7 +1374,18 @@ function scoreJobs(jobs, criteria = getCurrentSearchCriteria()) {
 }
 
 function weightedMatchValue(job, criteria = {}) {
-  return Number(job.match || 0);
+  let value = Number(job.match || 0);
+  const radius = Number(criteria.radiusKm || 0);
+  if (radius && Number.isFinite(job.distanceKm)) {
+    const distanceRatio = Math.min(1, Math.max(0, Number(job.distanceKm) / radius));
+    value += Math.round((1 - distanceRatio) * 24);
+    if (Number(job.distanceKm) <= 30) {
+      value += 6;
+    } else if (Number(job.distanceKm) <= 75) {
+      value += 3;
+    }
+  }
+  return value;
 }
 
 function refreshScoredJobs() {
@@ -1281,6 +1453,17 @@ function analyzeJobAgainstCv(job, criteria = {}) {
   }
   if (evidenceCount < 2) {
     score = Math.min(score, 29);
+  }
+  const cvHasDrivingLicense = /(führerschein|fuehrerschein|fahrerlaubnis|driving licence|driving license|class b|klasse b|klasse c|klasse ce|\bc1\b|\bce\b)/i.test(cvText);
+  const cvHasHeavyDriving = /(lkw|truck|berufskraftfahrer|klasse c|klasse ce|\bc1\b|\bce\b|7[,.]5\s?t)/i.test(cvText);
+  const jobNeedsLicense = /(führerschein|fuehrerschein|fahrerlaubnis|driving licence|driving license|class b|klasse b)/i.test(jobText);
+  const jobNeedsHeavyDriving = /(lkw|truck|berufskraftfahrer|klasse c|klasse ce|\bc1\b|\bce\b|7[,.]5\s?t)/i.test(jobText);
+  if (jobNeedsHeavyDriving && !cvHasHeavyDriving) {
+    score = Math.min(score, 38);
+    missing.unshift("heavy vehicle license");
+  } else if (jobNeedsLicense && !cvHasDrivingLicense) {
+    score = Math.min(score, 46);
+    missing.unshift("driving license");
   }
   score = Math.max(0, Math.min(100, score));
   const matched = unique([...matchedCvKeywords, ...matchedJobKeywords]);
@@ -1753,7 +1936,7 @@ function purgePrivateKeys() {
 }
 
 function updatePrivacyStatus() {
-  const hasCv = Boolean(cvMemory?.text || cvMemory?.name);
+  const hasCv = Boolean(cvMemory?.text?.trim());
   $("#privacyStatus").textContent = hasCv ? t("cvInMemory") : t("noCvStored");
   $("#cvModePill").textContent = hasCv ? t("readyToScore") : t("privateMode");
   $("#cvReadout").textContent = hasCv

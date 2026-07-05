@@ -1,5 +1,7 @@
 const ARBEITNOW_URL = "https://www.arbeitnow.com/api/job-board-api";
 const REMOTE_OK_URL = "https://remoteok.com/api";
+const ARBEITSAGENTUR_BASE_URL = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service";
+const ARBEITSAGENTUR_API_KEY = "jobboerse-jobsuche";
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 const GEO_CACHE = new Map();
 const CITY_COORDS = {
@@ -72,14 +74,16 @@ exports.handler = async (event) => {
   const selectedTypes = parseSelectedTypes(params.types || "");
 
   try {
-    const [arbeitnow, remoteOk] = await Promise.allSettled([
+    const [arbeitnow, remoteOk, arbeitsagentur] = await Promise.allSettled([
       fetchArbeitnow(query),
-      fetchRemoteOk(query)
+      fetchRemoteOk(query),
+      fetchArbeitsagentur(query, location, radiusKm, days, selectedTypes, remote)
     ]);
 
     const jobs = [
       ...(arbeitnow.status === "fulfilled" ? arbeitnow.value : []),
-      ...(remoteOk.status === "fulfilled" ? remoteOk.value : [])
+      ...(remoteOk.status === "fulfilled" ? remoteOk.value : []),
+      ...(arbeitsagentur.status === "fulfilled" ? arbeitsagentur.value : [])
     ]
       .map(addJobTypeMetadata)
       .filter((job) => isFresh(job.postedAt, days))
@@ -103,7 +107,8 @@ exports.handler = async (event) => {
       jobs: filteredJobs,
       sources: [
         "Arbeitnow live job API",
-        "Remote OK public API"
+        "Remote OK public API",
+        "Arbeitsagentur live job API"
       ],
       notes: [
         "Applicant or interest counts are shown only when a source publishes them.",
@@ -204,6 +209,195 @@ async function fetchRemoteOk(query) {
     });
 }
 
+async function fetchArbeitsagentur(query, location, radiusKm, days, selectedTypes, remoteOnly) {
+  const url = new URL(`${ARBEITSAGENTUR_BASE_URL}/pc/v6/jobs`);
+  url.searchParams.set("angebotsart", "1");
+  url.searchParams.set("page", "1");
+  url.searchParams.set("size", "50");
+  url.searchParams.set("pav", "false");
+  url.searchParams.set("veroeffentlichtseit", String(clamp(days || 30, 1, 100)));
+  if (query) {
+    url.searchParams.set("was", query);
+  }
+  if (location) {
+    url.searchParams.set("wo", location);
+    if (radiusKm) {
+      url.searchParams.set("umkreis", String(clamp(radiusKm, 1, 200)));
+    }
+  }
+  const workTime = arbeitsagenturWorkTime(selectedTypes, remoteOnly);
+  if (workTime) {
+    url.searchParams.set("arbeitszeit", workTime);
+  }
+
+  const response = await fetch(url, {
+    headers: arbeitsagenturHeaders()
+  });
+  if (!response.ok) {
+    throw new Error(`Arbeitsagentur returned ${response.status}`);
+  }
+  const payload = await response.json();
+  const searchJobs = payload.ergebnisliste || payload.stellenangebote || [];
+  const detailJobs = await loadArbeitsagenturDetails(searchJobs.slice(0, 18));
+  return searchJobs.map((job, index) => mapArbeitsagenturJob(job, detailJobs[index], selectedTypes));
+}
+
+async function loadArbeitsagenturDetails(jobs) {
+  const detailResults = await Promise.allSettled(jobs.map((job) => fetchArbeitsagenturDetail(job.referenznummer)));
+  return detailResults.map((result) => (result.status === "fulfilled" ? result.value : null));
+}
+
+async function fetchArbeitsagenturDetail(reference) {
+  if (!reference) {
+    return null;
+  }
+  const encoded = Buffer.from(reference, "utf8").toString("base64");
+  const url = `${ARBEITSAGENTUR_BASE_URL}/pc/v4/jobdetails/${encodeURIComponent(encoded)}`;
+  const response = await fetch(url, {
+    headers: arbeitsagenturHeaders()
+  });
+  if (!response.ok) {
+    throw new Error(`Arbeitsagentur details returned ${response.status}`);
+  }
+  return response.json();
+}
+
+function arbeitsagenturHeaders() {
+  return {
+    "Accept": "application/json",
+    "User-Agent": "JOB-RADER-HILLARY-21/1.0",
+    "X-API-Key": ARBEITSAGENTUR_API_KEY
+  };
+}
+
+function arbeitsagenturWorkTime(selectedTypes, remoteOnly) {
+  const values = new Set();
+  if (selectedTypes.includes("full-time")) {
+    values.add("vz");
+  }
+  if (selectedTypes.includes("part-time")) {
+    values.add("tz");
+  }
+  if (selectedTypes.includes("mini-job")) {
+    values.add("mj");
+  }
+  if (remoteOnly) {
+    values.add("ho");
+  }
+  return [...values].join(";");
+}
+
+function mapArbeitsagenturJob(searchJob, detailJob, selectedTypes = []) {
+  const job = { ...searchJob, ...(detailJob || {}) };
+  const reference = clean(job.referenznummer);
+  const location = formatArbeitsagenturLocation(job.stellenlokationen);
+  const description = clean(job.stellenangebotsBeschreibung || "");
+  const tags = unique([
+    clean(job.hauptberuf),
+    ...(job.alleBerufe || []).map(clean),
+    ...arbeitsagenturTypeTags(job, selectedTypes),
+    job.quereinstiegGeeignet ? "Quereinstieg" : "",
+    job.vertragsdauer ? formatGermanEnum(job.vertragsdauer) : ""
+  ]).slice(0, 10);
+  const salary = formatArbeitsagenturSalary(job);
+  const applyUrl = reference
+    ? `https://www.arbeitsagentur.de/jobsuche/jobdetail/${encodeURIComponent(reference)}`
+    : "https://www.arbeitsagentur.de/jobsuche/";
+  const text = `${job.stellenangebotsTitel || ""} ${job.firma || ""} ${job.hauptberuf || ""} ${description} ${tags.join(" ")}`;
+
+  return {
+    id: `arbeitsagentur-${reference || hash(`${job.firma}-${job.stellenangebotsTitel}-${location}`)}`,
+    source: "Arbeitsagentur",
+    title: clean(job.stellenangebotsTitel || job.titel),
+    company: clean(job.firma || job.arbeitgeber || "Employer not listed"),
+    location,
+    country: "Germany",
+    remote: Boolean(job.arbeitszeitHeimarbeit || /remote|home[\s-]?office|heimarbeit|telearbeit/i.test(text)),
+    postedAt: latestDate([
+      job.aenderungsdatum,
+      job.veroeffentlichungszeitraum?.von,
+      job.datumErsteVeroeffentlichung
+    ]),
+    applyUrl,
+    sourceUrl: applyUrl,
+    description,
+    summary: summarize(description || `${clean(job.hauptberuf)}. ${tags.join(", ")}.`),
+    tags,
+    salary,
+    contacts: extractContacts(`${description} ${applyUrl}`),
+    interestCount: null,
+    interestLabel: "Not published by source",
+    distanceKm: Number.isFinite(Number(job.entfernung)) ? Math.round(Number(job.entfernung)) : null
+  };
+}
+
+function arbeitsagenturTypeTags(job, selectedTypes = []) {
+  const tags = [];
+  if (job.arbeitszeitVollzeit) {
+    tags.push("Vollzeit");
+  }
+  if (
+    job.arbeitszeitTeilzeitAbend ||
+    job.arbeitszeitTeilzeitNachmittag ||
+    job.arbeitszeitTeilzeitVormittag ||
+    job.arbeitszeitTeilzeitFlexibel
+  ) {
+    tags.push("Teilzeit");
+  }
+  if (job.istGeringfuegigeBeschaeftigung) {
+    tags.push("Minijob");
+  }
+  if (job.arbeitszeitSchichtNachtWochenende) {
+    tags.push("Schicht/Wochenende");
+  }
+  if (!tags.length) {
+    if (selectedTypes.includes("full-time")) {
+      tags.push("Vollzeit");
+    }
+    if (selectedTypes.includes("part-time")) {
+      tags.push("Teilzeit");
+    }
+    if (selectedTypes.includes("mini-job")) {
+      tags.push("Minijob");
+    }
+  }
+  return tags;
+}
+
+function formatArbeitsagenturLocation(locations = []) {
+  const first = locations?.[0]?.adresse || {};
+  const city = clean(first.ort);
+  const postal = clean(first.plz);
+  const region = clean(first.region);
+  if (postal && city) {
+    return `${postal} ${city}`;
+  }
+  return city || region || "Germany";
+}
+
+function formatArbeitsagenturSalary(job) {
+  const amount = Number(job.festgehalt);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return "";
+  }
+  if (/STUNDENLOHN/i.test(job.verguetungsangabe || "")) {
+    return `€${amount.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/hour`;
+  }
+  return `€${amount.toLocaleString("de-DE")}`;
+}
+
+function formatGermanEnum(value) {
+  return clean(String(value || "").toLowerCase().replace(/_/g, " "));
+}
+
+function latestDate(values) {
+  const dates = values
+    .map((value) => (value ? new Date(value) : null))
+    .filter((date) => date && Number.isFinite(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+  return dates[0] ? dates[0].toISOString() : null;
+}
+
 function addJobTypeMetadata(job) {
   const jobTypes = classifyJobTypes(job);
   return {
@@ -273,7 +467,12 @@ async function addDistanceMetadata(jobs, location, radiusKm) {
   }
   const origin = await geocodeLocation(location);
   if (!origin) {
-    return jobs.map((job) => ({ ...job, distanceKm: null }));
+    return jobs.map((job) => {
+      const sourceDistance = Number(job.distanceKm);
+      return Number.isFinite(sourceDistance)
+        ? { ...job, distanceKm: Math.round(sourceDistance) }
+        : { ...job, distanceKm: null };
+    });
   }
 
   const uniqueLocations = unique(jobs
@@ -288,6 +487,10 @@ async function addDistanceMetadata(jobs, location, radiusKm) {
   return jobs.map((job) => {
     if (job.remote) {
       return { ...job, distanceKm: null };
+    }
+    const sourceDistance = Number(job.distanceKm);
+    if (Number.isFinite(sourceDistance)) {
+      return { ...job, distanceKm: Math.round(sourceDistance) };
     }
     const place = simplifyGeoLocation(job.location);
     const coords = coordsByLocation.get(place);
@@ -396,20 +599,22 @@ function matches(job, query, location, remote, radiusKm) {
   if (!matchesQuery(job, query)) {
     return false;
   }
+  const distance = Number(job.distanceKm);
+  const hasDistance = Number.isFinite(distance);
   const locationNeedle = location.toLowerCase();
   const locationText = `${job.location} ${job.country || ""} ${job.remote ? "remote" : ""}`.toLowerCase();
   if (location && radiusKm && job.remote && !remote) {
-    if (Number.isFinite(job.distanceKm)) {
-      return job.distanceKm <= radiusKm && Boolean(job.title && job.company && job.applyUrl);
+    if (hasDistance) {
+      return distance <= radiusKm && Boolean(job.title && job.company && job.applyUrl);
     }
     if (!locationText.includes(locationNeedle) && !locationText.includes("germany") && !locationText.includes("deutschland")) {
       return false;
     }
   }
-  if (location && radiusKm && !job.remote && Number.isFinite(job.distanceKm) && job.distanceKm > radiusKm) {
+  if (location && radiusKm && !job.remote && hasDistance && distance > radiusKm) {
     return false;
   }
-  if (location && radiusKm && !job.remote && !Number.isFinite(job.distanceKm) && !locationText.includes(locationNeedle)) {
+  if (location && radiusKm && !job.remote && !hasDistance && !locationText.includes(locationNeedle)) {
     return false;
   }
   if (location && !radiusKm && !locationText.includes(locationNeedle)) {

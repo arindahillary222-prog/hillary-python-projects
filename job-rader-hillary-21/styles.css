@@ -450,6 +450,21 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(31, 113, 104, 0.14);
 }
 
+.location-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 8px;
+  align-items: center;
+}
+
+.icon-action {
+  min-width: 46px;
+  height: 46px;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
 textarea {
   resize: vertical;
   min-height: 150px;

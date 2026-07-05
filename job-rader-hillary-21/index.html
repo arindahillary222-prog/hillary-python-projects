@@ -138,7 +138,10 @@
               </label>
               <label>
                 <span data-i18n="location">Postal code or city</span>
-                <input id="locationSearch" type="search" placeholder="10115 Berlin, Munich, remote" data-i18n-placeholder="locationPlaceholder">
+                <div class="location-row">
+                  <input id="locationSearch" type="search" placeholder="10115 Berlin, Munich, remote" data-i18n-placeholder="locationPlaceholder">
+                  <button class="quiet-button icon-action" id="useLocationButton" type="button" aria-label="Use my location" title="Use my location" data-i18n-title="useMyLocation">⌖</button>
+                </div>
               </label>
               <label>
                 <span data-i18n="radiusKm">Radius</span>
