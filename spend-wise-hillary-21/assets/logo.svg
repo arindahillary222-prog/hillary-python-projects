@@ -1,0 +1,9 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SPEND WISE-HILLARY 21">
+  <rect width="512" height="512" rx="96" fill="#123c38"/>
+  <path d="M128 328c0-84 64-152 148-152 58 0 108 33 133 82" fill="none" stroke="#f0bd57" stroke-width="34" stroke-linecap="round"/>
+  <path d="M128 328h252" fill="none" stroke="#f5f7f2" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="340" cy="170" r="36" fill="#f5f7f2"/>
+  <circle cx="340" cy="170" r="16" fill="#176b5f"/>
+  <path d="M236 286l86-118" fill="none" stroke="#f5f7f2" stroke-width="24" stroke-linecap="round"/>
+  <path d="M108 378h296" fill="none" stroke="#39b99f" stroke-width="20" stroke-linecap="round"/>
+</svg>

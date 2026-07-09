@@ -1,0 +1,40 @@
+{
+  "name": "SPEND WISE-HILLARY 21",
+  "short_name": "SPEND WISE 21",
+  "description": "International student control center for work compliance, expenses, scholarships, residence permits, and calendar planning in Germany.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f7f2",
+  "theme_color": "#123c38",
+  "categories": ["finance", "productivity", "education"],
+  "icons": [
+    {
+      "src": "assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/maskable-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Work Shift",
+      "short_name": "Shift",
+      "url": "./?view=work",
+      "description": "Log working time, breaks, and expected pay."
+    },
+    {
+      "name": "Add Expense",
+      "short_name": "Expense",
+      "url": "./?view=finance",
+      "description": "Log student expenses in euros."
+    }
+  ]
+}

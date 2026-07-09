@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#123c38">
+    <meta name="description" content="SPEND WISE-HILLARY 21 helps international students in Germany manage work compliance, money, scholarships, academics, residence permits, and calendar deadlines.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="SPEND WISE 21">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/logo.svg">
+    <link rel="stylesheet" href="styles.css">
+    <title>SPEND WISE-HILLARY 21</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary">
+        <button class="brand" type="button" data-route="dashboard">
+          <img src="assets/logo.svg" alt="" width="48" height="48">
+          <span>
+            <strong>SPEND WISE</strong>
+            <small>HILLARY 21</small>
+          </span>
+        </button>
+        <nav>
+          <button class="nav-item active" type="button" data-route="dashboard" data-i18n="navDashboard">Dashboard</button>
+          <button class="nav-item" type="button" data-route="work" data-i18n="navWork">Work Tracker</button>
+          <button class="nav-item" type="button" data-route="finance" data-i18n="navFinance">Finance</button>
+          <button class="nav-item" type="button" data-route="scholarships" data-i18n="navScholarships">Scholarships</button>
+          <button class="nav-item" type="button" data-route="permit" data-i18n="navPermit">Residence Permit</button>
+          <button class="nav-item" type="button" data-route="calendar" data-i18n="navCalendar">Calendar Sync</button>
+          <button class="nav-item" type="button" data-route="settings" data-i18n="navSettings">Settings</button>
+        </nav>
+        <div class="privacy-card">
+          <span class="privacy-dot"></span>
+          <span data-i18n="privateStorage">Private local storage</span>
+        </div>
+      </aside>
+
+      <div class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" data-i18n="workspace">Student control center</p>
+            <h1 id="pageTitle" data-i18n="navDashboard">Dashboard</h1>
+          </div>
+          <div class="topbar-actions">
+            <label class="compact-control">
+              <span data-i18n="language">Language</span>
+              <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Francais</option>
+                <option value="zh">Chinese</option>
+                <option value="sw">Kiswahili</option>
+                <option value="hi">Indian (Hindi)</option>
+                <option value="pt">Portugues</option>
+                <option value="ar">Arabic</option>
+              </select>
+            </label>
+            <label class="compact-control">
+              <span data-i18n="theme">Theme</span>
+              <select id="themeSelect">
+                <option value="light" data-i18n="light">Light</option>
+                <option value="dark" data-i18n="dark">Dark</option>
+              </select>
+            </label>
+            <button class="quiet-button" id="installButton" type="button" data-i18n="installApp">Install App</button>
+          </div>
+        </header>
+
+        <main>
+          <section class="view active" id="view-dashboard" aria-labelledby="dashboardHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="dashboardHeading" data-i18n="dashboardTitle">Legal, money, study, and permit overview</h2>
+                <p data-i18n="dashboardSub">Know what is safe this week and what needs attention next.</p>
+              </div>
+              <span class="status-pill" id="todayPill"></span>
+            </div>
+            <div class="metric-grid" id="metricGrid"></div>
+            <div class="dashboard-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="workCompliance">Work compliance</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="work" data-i18n="open">Open</button>
+                </div>
+                <div class="compliance-band" id="weeklyComplianceBand"></div>
+                <div class="progress-list" id="complianceProgress"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="financeSnapshot">Finance snapshot</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="finance" data-i18n="open">Open</button>
+                </div>
+                <div class="donut-wrap">
+                  <div class="donut" id="financeDonut"><span></span></div>
+                  <div id="categoryBreakdown" class="stacked-list"></div>
+                </div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="nextDeadlines">Next deadlines</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="calendar" data-i18n="sync">Sync</button>
+                </div>
+                <div class="deadline-list" id="deadlineList"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="permitReadiness">Residence permit readiness</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="permit" data-i18n="open">Open</button>
+                </div>
+                <div class="readiness-block">
+                  <strong id="permitReadinessPercent">0%</strong>
+                  <span id="permitReadinessText"></span>
+                </div>
+                <div class="mini-list" id="missingPermitList"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" id="view-work" aria-labelledby="workHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="workHeading" data-i18n="workTitle">Work compliance tracker</h2>
+                <p data-i18n="workSub">Breaks are excluded automatically. Extra hours above the weekly limit are banked.</p>
+              </div>
+              <button class="primary-button" id="addShiftButton" type="button" data-i18n="addShift">Add Shift</button>
+            </div>
+            <div class="metric-grid compact" id="workMetricGrid"></div>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="workingTimeAccount">Working time account</h3>
+                <span class="status-pill" id="timeAccountStatus"></span>
+              </div>
+              <div class="account-grid">
+                <label>
+                  <span data-i18n="manualCarry">Manual carry-in/out hours</span>
+                  <input id="manualTimeCarry" type="number" step="0.25" inputmode="decimal">
+                </label>
+                <label>
+                  <span data-i18n="compensatedHours">Compensated hours already taken</span>
+                  <input id="compensatedHours" type="number" step="0.25" inputmode="decimal">
+                </label>
+                <div class="account-total">
+                  <span data-i18n="bankedExtra">Banked extra hours</span>
+                  <strong id="bankedExtraHours">0.00 h</strong>
+                </div>
+              </div>
+            </section>
+            <section class="panel table-panel">
+              <div class="panel-head">
+                <h3 data-i18n="shiftLedger">Shift ledger</h3>
+                <div class="button-row">
+                  <button class="quiet-button small" id="exportShiftsCsv" type="button" data-i18n="exportCsv">Export CSV</button>
+                </div>
+              </div>
+              <div class="responsive-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-i18n="date">Date</th>
+                      <th data-i18n="job">Job</th>
+                      <th data-i18n="type">Type</th>
+                      <th data-i18n="time">Time</th>
+                      <th data-i18n="break">Break</th>
+                      <th data-i18n="worked">Worked</th>
+                      <th data-i18n="wage">Wage</th>
+                      <th data-i18n="expectedPay">Expected money</th>
+                      <th data-i18n="actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="shiftRows"></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+
+          <section class="view" id="view-finance" aria-labelledby="financeHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="financeHeading" data-i18n="financeTitle">Finance and expense tracker</h2>
+                <p data-i18n="financeSub">Log income and expenses in euros with fast categories.</p>
+              </div>
+              <button class="primary-button" id="addMoneyButton" type="button" data-i18n="addTransaction">Add Transaction</button>
+            </div>
+            <div class="quick-chips" id="quickExpenseChips"></div>
+            <div class="metric-grid compact" id="financeMetricGrid"></div>
+            <section class="panel table-panel">
+              <div class="panel-head">
+                <h3 data-i18n="moneyLedger">Money ledger</h3>
+                <button class="quiet-button small" id="exportMoneyCsv" type="button" data-i18n="exportCsv">Export CSV</button>
+              </div>
+              <div class="responsive-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-i18n="date">Date</th>
+                      <th data-i18n="description">Description</th>
+                      <th data-i18n="category">Category</th>
+                      <th data-i18n="kind">Kind</th>
+                      <th data-i18n="amount">Amount</th>
+                      <th data-i18n="actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="moneyRows"></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+
+          <section class="view" id="view-scholarships" aria-labelledby="scholarshipHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="scholarshipHeading" data-i18n="scholarshipTitle">Scholarship and academic monitoring</h2>
+                <p data-i18n="scholarshipSub">Track funding, renewal dates, and ECTS progress before there is a problem.</p>
+              </div>
+              <button class="primary-button" id="addScholarshipButton" type="button" data-i18n="addScholarship">Add Scholarship</button>
+            </div>
+            <section class="panel academic-panel">
+              <div>
+                <h3 data-i18n="ectsProgress">ECTS progress</h3>
+                <p data-i18n="ectsSub">Set the target for your program and update completed credits.</p>
+              </div>
+              <div class="account-grid">
+                <label>
+                  <span data-i18n="ectsCompleted">ECTS completed</span>
+                  <input id="ectsCompleted" type="number" min="0" step="1">
+                </label>
+                <label>
+                  <span data-i18n="ectsTarget">ECTS target</span>
+                  <input id="ectsTarget" type="number" min="1" step="1">
+                </label>
+                <div class="account-total">
+                  <span data-i18n="progress">Progress</span>
+                  <strong id="ectsPercent">0%</strong>
+                </div>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="academicDates">Academic dates</h3>
+                <button class="quiet-button small" id="addAcademicDateButton" type="button" data-i18n="addAcademicDate">Add Academic Date</button>
+              </div>
+              <div class="calendar-list" id="academicEventList"></div>
+            </section>
+            <div class="card-grid" id="scholarshipCards"></div>
+          </section>
+
+          <section class="view" id="view-permit" aria-labelledby="permitHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="permitHeading" data-i18n="permitTitle">Residence permit checklist</h2>
+                <p data-i18n="permitSub">Prepare documents, appointment dates, and proof before renewal.</p>
+              </div>
+              <button class="primary-button" id="addPermitItemButton" type="button" data-i18n="addPermitItem">Add Item</button>
+            </div>
+            <section class="panel">
+              <div class="account-grid">
+                <label>
+                  <span data-i18n="appointmentDate">Appointment date</span>
+                  <input id="permitAppointment" type="date">
+                </label>
+                <label>
+                  <span data-i18n="permitExpiry">Permit expiry</span>
+                  <input id="permitExpiry" type="date">
+                </label>
+                <div class="account-total">
+                  <span data-i18n="readiness">Readiness</span>
+                  <strong id="permitReadinessLarge">0%</strong>
+                </div>
+              </div>
+            </section>
+            <div class="checklist" id="permitChecklist"></div>
+          </section>
+
+          <section class="view" id="view-calendar" aria-labelledby="calendarHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="calendarHeading" data-i18n="calendarTitle">Google Calendar sync</h2>
+                <p data-i18n="calendarSub">Add shifts, visa appointments, scholarship deadlines, and academic dates to your phone calendar.</p>
+              </div>
+              <button class="primary-button" id="downloadIcsButton" type="button" data-i18n="downloadIcs">Download Calendar File</button>
+            </div>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="calendarEvents">Calendar events</h3>
+                <span class="status-pill" data-i18n="googleReady">Google links ready</span>
+              </div>
+              <div class="calendar-list" id="calendarEvents"></div>
+            </section>
+          </section>
+
+          <section class="view" id="view-settings" aria-labelledby="settingsHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="settingsHeading" data-i18n="settingsTitle">Settings and job wages</h2>
+                <p data-i18n="settingsSub">Set limits, wages, and private data controls.</p>
+              </div>
+              <button class="primary-button" id="addJobButton" type="button" data-i18n="addJob">Add Job</button>
+            </div>
+            <div class="settings-grid">
+              <section class="panel">
+                <h3 data-i18n="complianceSettings">Compliance settings</h3>
+                <div class="form-grid one">
+                  <label>
+                    <span data-i18n="weeklyLimit">Weekly lecture-period limit</span>
+                    <input id="weeklyLimit" type="number" min="1" max="80" step="0.5">
+                  </label>
+                  <label>
+                    <span data-i18n="yearlyDayLimit">Yearly full-day limit</span>
+                    <input id="yearlyDayLimit" type="number" min="1" max="366" step="1">
+                  </label>
+                  <label>
+                    <span data-i18n="monthlyBudget">Monthly budget</span>
+                    <input id="monthlyBudget" type="number" min="0" step="10">
+                  </label>
+                </div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="jobWages">Jobs and hourly wages</h3>
+                  <span class="status-pill" data-i18n="autoPay">Auto pay enabled</span>
+                </div>
+                <div class="job-list" id="jobList"></div>
+              </section>
+              <section class="panel">
+                <h3 data-i18n="dataControls">Data controls</h3>
+                <div class="button-row wrap">
+                  <button class="quiet-button" id="exportDataButton" type="button" data-i18n="exportData">Export Data</button>
+                  <button class="quiet-button" id="importDataButton" type="button" data-i18n="importData">Import Data</button>
+                  <input class="hidden" id="importDataInput" type="file" accept="application/json">
+                  <button class="danger-button" id="resetDataButton" type="button" data-i18n="resetData">Reset App Data</button>
+                </div>
+                <p class="muted" data-i18n="dataNote">Data stays in this browser unless you export it.</p>
+              </section>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <dialog id="entryDialog">
+      <form method="dialog" class="dialog-card" id="entryForm">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow" id="dialogEyebrow"></p>
+            <h2 id="dialogTitle"></h2>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Close">x</button>
+        </div>
+        <div id="dialogFields" class="form-grid"></div>
+        <div class="dialog-actions">
+          <button class="quiet-button" value="cancel" type="submit" data-i18n="cancel">Cancel</button>
+          <button class="primary-button" id="dialogSaveButton" value="default" type="submit" data-i18n="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="installDialog">
+      <div class="dialog-card">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow" data-i18n="installable">Installable app</p>
+            <h2 data-i18n="installTitle">Install SPEND WISE-HILLARY 21</h2>
+          </div>
+          <button class="icon-button" id="closeInstallDialog" type="button" aria-label="Close">x</button>
+        </div>
+        <div class="install-grid">
+          <div>
+            <strong>Android</strong>
+            <p data-i18n="installAndroid">Open in Chrome, tap the browser menu, then choose Install app or Add to Home screen.</p>
+          </div>
+          <div>
+            <strong>iPhone</strong>
+            <p data-i18n="installIphone">Open in Safari, tap Share, then choose Add to Home Screen.</p>
+          </div>
+          <div>
+            <strong>Mac / Windows</strong>
+            <p data-i18n="installLaptop">Open in Chrome or Edge and use the install icon in the address bar or browser menu.</p>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
