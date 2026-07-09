@@ -10,7 +10,7 @@ for (const file of ["app.js", "sw.js"]) {
 }
 
 const manifest = JSON.parse(read("manifest.webmanifest"));
-if (manifest.name !== "Student Control Center") throw new Error("Manifest name must be public and generic.");
+if (manifest.name !== "CONTROL CENTER Hillary.21") throw new Error("Manifest name must match the requested brand.");
 if (manifest.display !== "standalone") throw new Error("Manifest must install as a standalone PWA.");
 if (!manifest.icons?.length) throw new Error("Manifest must include app icons.");
 

@@ -1,6 +1,6 @@
-# Student Control Center
+# CONTROL CENTER Hillary.21
 
-Installable public student control center.
+Installable student control center.
 
 ## Features
 

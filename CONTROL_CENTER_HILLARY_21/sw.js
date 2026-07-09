@@ -1,4 +1,4 @@
-const CACHE_NAME = "student-control-center-v2";
+const CACHE_NAME = "control-center-hillary-21-v3";
 const APP_SHELL = [
   "./",
   "./index.html",

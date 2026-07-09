@@ -1,8 +1,8 @@
 {
-  "name": "student-control-center",
+  "name": "control-center-hillary-21",
   "version": "2.0.0",
   "private": true,
-  "description": "Public student control center PWA for work compliance, finance, scholarships, permits, and calendar planning.",
+  "description": "CONTROL CENTER Hillary.21 PWA for work compliance, finance, scholarships, permits, and calendar planning.",
   "scripts": {
     "build": "node scripts/validate-build.mjs",
     "test": "node --test tests/app.test.js",

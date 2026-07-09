@@ -12,7 +12,9 @@ const files = [
   "sw.js",
   "_headers",
   "_redirects",
-  "netlify.toml"
+  "netlify.toml",
+  "assets/logo.svg",
+  "assets/maskable-icon.svg"
 ];
 
 for (const file of ["app.js", "sw.js"]) {
@@ -21,7 +23,6 @@ for (const file of ["app.js", "sw.js"]) {
 
 const forbidden = [
   ["Base", "44"],
-  ["Hil", "lary"],
   ["SP", "END", " WI", "SE"],
   ["Malen", "go"],
   ["Per", "fekt"],
@@ -45,5 +46,6 @@ if (!/shifts:\s*\[\]/.test(app)) throw new Error("Fresh app data must start with
 if (!/payslips:\s*\[\]/.test(app)) throw new Error("Fresh app data must start with no payslips.");
 if (!/transactions:\s*\[\]/.test(app)) throw new Error("Fresh app data must start with no transactions.");
 if (!/scholarships:\s*\[\]/.test(app)) throw new Error("Fresh app data must start with no scholarships.");
+if (!app.includes("CONTROL CENTER Hillary.21")) throw new Error("App name must match CONTROL CENTER Hillary.21.");
 
 console.log("Lint checks passed.");

@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CONTROL CENTER Hillary.21 icon">
+  <rect width="512" height="512" fill="#0f3a56"/>
+  <circle cx="256" cy="256" r="224" fill="#075985"/>
+  <path d="M122 324c0-80 61-145 141-145 55 0 103 31 127 78" fill="none" stroke="#7dd3fc" stroke-width="34" stroke-linecap="round"/>
+  <path d="M122 324h268" fill="none" stroke="#f5f7f2" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="330" cy="169" r="37" fill="#f5f7f2"/>
+  <circle cx="330" cy="169" r="16" fill="#0284c7"/>
+  <path d="M230 286l88-119" fill="none" stroke="#f5f7f2" stroke-width="24" stroke-linecap="round"/>
+  <path d="M104 382h304" fill="none" stroke="#38bdf8" stroke-width="20" stroke-linecap="round"/>
+</svg>

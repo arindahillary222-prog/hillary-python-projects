@@ -1,4 +1,4 @@
-const APP_NAME = "Student Control Center";
+const APP_NAME = "CONTROL CENTER Hillary.21";
 const APP_VERSION = "2.0.0";
 const LEGACY_STATE_KEY = "swh21.state.v1";
 const BASE_STORAGE_KEY = "student_control_center_data_v2";
@@ -28,7 +28,7 @@ const PERMIT_STATUSES = [
 const TRANSLATIONS = {
   en: {
     navDashboard: "Dashboard", navWork: "Work Tracker", navFinance: "Finance", navScholarships: "Scholarships", navPermit: "Residence Permit", navCalendar: "Calendar Sync", navAi: "AI Assistant", navSettings: "Settings",
-    workspace: "Student control center", language: "Language", theme: "Theme", light: "Light", dark: "Dark", installApp: "Install App", privateStorage: "Private local storage",
+    workspace: "CONTROL CENTER Hillary.21", language: "Language", theme: "Theme", light: "Light", dark: "Dark", installApp: "Install App", privateStorage: "Private local storage",
     dashboardTitle: "Legal, money, study, and permit overview", dashboardSub: "Know what is safe this week and what needs attention next.", workCompliance: "Work compliance", open: "Open", financeSnapshot: "Finance snapshot", nextDeadlines: "Next deadlines", sync: "Sync", permitReadiness: "Residence permit readiness",
     workTitle: "Work compliance tracker", workSub: "Breaks are excluded automatically. Extra hours above the weekly limit are banked per job.", addShift: "Add Shift", addPayslip: "Add Payslip", workingTimeAccount: "Working time account", accountJob: "Account job", manualCarry: "Manual carry-in/out hours", compensatedHours: "Compensated hours already taken", confirmedBanked: "Employer-confirmed banked hours", bankedExtra: "Banked extra hours", shiftLedger: "Shift ledger",
     filterJob: "Job / employer", filterMonth: "Month", dateFrom: "Date from", dateTo: "Date to", paidStatus: "Paid status", exportPdf: "Export PDF", exportDocx: "Export DOCX", emailShare: "Email", whatsAppShare: "WhatsApp", payslipLedger: "Payslips", payslipsSeparate: "Separate from shifts", month: "Month", paidGross: "Paid gross", paidNet: "Paid net", hoursPaid: "Hours paid",
@@ -39,7 +39,7 @@ const TRANSLATIONS = {
     aiTitle: "AI Data Assistant", aiSub: "Ask local questions about your own saved data. No API key is required.", ask: "Ask",
     settingsTitle: "Settings and job wages", settingsSub: "Set limits, wages, and private data controls.", addJob: "Add Job", complianceSettings: "Compliance settings", weeklyLimit: "Weekly work limit", yearlyDayLimit: "Yearly day-equivalent limit", monthlyBudget: "Monthly budget", currency: "Currency", countryMode: "Country mode", jobWages: "Jobs and hourly wages", autoPay: "Auto pay enabled", dataControls: "Data controls", exportData: "Export Data", importData: "Import Data", resetData: "Reset App Data", dataNote: "Data stays in this browser or installed app unless you export it.",
     date: "Date", job: "Job", type: "Type", time: "Time", break: "Break", worked: "Worked", wage: "Wage", expectedPay: "Expected money", actions: "Actions", exportCsv: "Export CSV", description: "Description", category: "Category", kind: "Kind", amount: "Amount", cancel: "Cancel", save: "Save",
-    importPreview: "Import preview", reviewImportedData: "Review imported data", installable: "Installable app", installTitle: "Install Student Control Center", installAndroid: "Open in Chrome, tap the browser menu, then choose Install app or Add to Home screen.", installIphone: "Open in Safari, tap Share, then choose Add to Home Screen.", installLaptop: "Open in Chrome or Edge and use the install icon in the address bar or browser menu."
+    importPreview: "Import preview", reviewImportedData: "Review imported data", installable: "Installable app", installTitle: "Install CONTROL CENTER Hillary.21", installAndroid: "Open in Chrome, tap the browser menu, then choose Install app or Add to Home screen.", installIphone: "Open in Safari, tap Share, then choose Add to Home Screen.", installLaptop: "Open in Chrome or Edge and use the install icon in the address bar or browser menu."
   },
   de: { navDashboard: "Dashboard", navWork: "Arbeitszeit", navFinance: "Finanzen", navScholarships: "Stipendien", navPermit: "Aufenthalt", navCalendar: "Kalender", navAi: "KI Assistent", navSettings: "Einstellungen", language: "Sprache", theme: "Design", light: "Hell", dark: "Dunkel", installApp: "App installieren", save: "Speichern", cancel: "Abbrechen" },
   fr: { navDashboard: "Tableau", navWork: "Travail", navFinance: "Finance", navScholarships: "Bourses", navPermit: "Sejour", navCalendar: "Calendrier", navAi: "Assistant IA", navSettings: "Parametres", language: "Langue", theme: "Theme", installApp: "Installer", save: "Enregistrer", cancel: "Annuler" },
@@ -371,7 +371,7 @@ function applyPreferences() {
   document.documentElement.dir = meta.dir;
   document.documentElement.dataset.theme = currentTheme;
   const themeMeta = document.querySelector('meta[name="theme-color"]');
-  if (themeMeta) themeMeta.content = currentTheme === "dark" ? "#101816" : "#0f766e";
+  if (themeMeta) themeMeta.content = currentTheme === "dark" ? "#101827" : "#38bdf8";
 }
 
 function applyTranslations() {
@@ -438,7 +438,7 @@ function bindControls() {
   $("#exportShiftsPdf").addEventListener("click", exportFilteredShiftPdf);
   $("#emailLedgerButton").addEventListener("click", emailLedger);
   $("#whatsAppLedgerButton").addEventListener("click", whatsAppLedger);
-  $("#exportMoneyCsv").addEventListener("click", () => downloadCsv("student-control-center-money.csv", moneyCsvRows()));
+  $("#exportMoneyCsv").addEventListener("click", () => downloadCsv("control-center-hillary-21-money.csv", moneyCsvRows()));
   $("#downloadIcsButton").addEventListener("click", downloadCalendarFile);
   $("#exportDataButton").addEventListener("click", exportData);
   $("#importDataButton").addEventListener("click", () => $("#importDataInput").click());
@@ -1136,14 +1136,14 @@ function googleCalendarUrl(event) {
 }
 
 function downloadCalendarFile() {
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Student Control Center//Public PWA//EN"];
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//CONTROL CENTER Hillary.21//Public PWA//EN"];
   calendarEvents().forEach((event) => {
     const start = event.startTime ? `${event.date}T${event.startTime}` : `${event.date}T09:00`;
     const end = event.endTime ? `${event.date}T${event.endTime}` : `${event.date}T10:00`;
-    lines.push("BEGIN:VEVENT", `UID:${crypto.randomUUID()}@student-control-center`, `DTSTAMP:${calendarStamp(new Date().toISOString().slice(0, 16))}`, `DTSTART:${calendarStamp(start)}`, `DTEND:${calendarStamp(end)}`, `SUMMARY:${icsText(event.title)}`, `DESCRIPTION:${icsText(event.details || event.type)}`, "END:VEVENT");
+    lines.push("BEGIN:VEVENT", `UID:${crypto.randomUUID()}@control-center-hillary-21`, `DTSTAMP:${calendarStamp(new Date().toISOString().slice(0, 16))}`, `DTSTART:${calendarStamp(start)}`, `DTEND:${calendarStamp(end)}`, `SUMMARY:${icsText(event.title)}`, `DESCRIPTION:${icsText(event.details || event.type)}`, "END:VEVENT");
   });
   lines.push("END:VCALENDAR");
-  downloadText("student-control-center-calendar.ics", lines.join("\r\n"), "text/calendar");
+  downloadText("control-center-hillary-21-calendar.ics", lines.join("\r\n"), "text/calendar");
 }
 
 function permitReadiness() {
@@ -1177,7 +1177,7 @@ function downloadCsv(filename, rows) {
 }
 
 function exportData() {
-  downloadText("student-control-center-data.json", JSON.stringify(validateAndNormalizeAppData(state), null, 2), "application/json");
+  downloadText("control-center-hillary-21-data.json", JSON.stringify(validateAndNormalizeAppData(state), null, 2), "application/json");
 }
 
 function importData(event) {
@@ -1190,7 +1190,7 @@ function importData(event) {
       renderImportPreview(pendingImportData);
       $("#importPreviewDialog").showModal();
     } catch {
-      window.alert("The selected file could not be imported because it is not valid Student Control Center JSON.");
+      window.alert("The selected file could not be imported because it is not valid CONTROL CENTER Hillary.21 JSON.");
     } finally {
       event.target.value = "";
     }
@@ -1226,7 +1226,7 @@ function closeImportPreview() {
 }
 
 function resetData() {
-  if (!window.confirm("Reset all Student Control Center data for this browser or installed app?")) return;
+  if (!window.confirm("Reset all CONTROL CENTER Hillary.21 data for this browser or installed app?")) return;
   state = getEmptyAppData();
   saveState();
   renderAll();

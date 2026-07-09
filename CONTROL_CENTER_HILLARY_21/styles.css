@@ -1,31 +1,31 @@
 :root {
-  --bg: #f4f7f2;
+  --bg: #f4f9ff;
   --panel: #ffffff;
-  --panel-2: #eef5ef;
+  --panel-2: #eaf6ff;
   --ink: #172126;
-  --muted: #647276;
-  --line: #d6dfd8;
-  --accent: #176b5f;
-  --accent-2: #d99b2b;
+  --muted: #617180;
+  --line: #d1e7f5;
+  --accent: #0284c7;
+  --accent-2: #38bdf8;
   --danger: #b33d4a;
   --warning: #ad6b00;
-  --success: #27724f;
+  --success: #2563eb;
   --shadow: 0 18px 45px rgba(28, 44, 42, 0.09);
   --radius: 8px;
 }
 
 html[data-theme="dark"] {
-  --bg: #101816;
-  --panel: #17221f;
-  --panel-2: #102b26;
-  --ink: #ecf4f0;
-  --muted: #a8b9b4;
-  --line: #2f4740;
-  --accent: #39b99f;
-  --accent-2: #f0bd57;
+  --bg: #101827;
+  --panel: #162033;
+  --panel-2: #0f2a44;
+  --ink: #eef6ff;
+  --muted: #b5c5d4;
+  --line: #2d4d68;
+  --accent: #38bdf8;
+  --accent-2: #93c5fd;
   --danger: #ff7b8a;
   --warning: #f0bd57;
-  --success: #74d39d;
+  --success: #60a5fa;
   --shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
 }
 
@@ -221,7 +221,7 @@ textarea {
   width: 100%;
   min-height: 42px;
   padding: 10px 11px;
-  border: 1px solid #cbd8d2;
+  border: 1px solid #c9deed;
   border-radius: var(--radius);
   outline: none;
   color: var(--ink);
@@ -231,8 +231,8 @@ textarea {
 html[data-theme="dark"] input,
 html[data-theme="dark"] select,
 html[data-theme="dark"] textarea {
-  border-color: #39564e;
-  background: #101916;
+  border-color: #31516d;
+  background: #101827;
 }
 
 input:focus,

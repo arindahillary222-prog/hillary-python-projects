@@ -120,7 +120,7 @@ function loadCore({ standalone = false, backing = {} } = {}) {
   return { core: sandbox.window.StudentControlCenterCore, storage, backing };
 }
 
-test("starts with empty public data and no hardcoded personal details", () => {
+test("starts with empty data and no legacy builder or demo details", () => {
   const { core } = loadCore();
   const data = core.getEmptyAppData();
   assert.equal(data.version, "2.0.0");
@@ -136,11 +136,10 @@ test("starts with empty public data and no hardcoded personal details", () => {
   assert.equal(data.settings.yearlyDayLimit, 140);
   assert.equal(data.settings.monthlyBudget, 0);
   assert.equal(data.settings.currency, "EUR");
-  assert.equal(data.settings.appName, "Student Control Center");
+  assert.equal(data.settings.appName, "CONTROL CENTER Hillary.21");
   assert.equal(data.settings.countryMode, "custom");
   assert.equal(data.settings.locale, "en");
   const forbidden = new RegExp([
-    ["Hil", "lary"].join(""),
     ["Base", "44"].join(""),
     ["Malen", "go"].join(""),
     ["Per", "fekt"].join(""),
