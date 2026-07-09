@@ -1,4 +1,4 @@
-const CACHE_NAME = "spend-wise-hillary-21-v1";
+const CACHE_NAME = "student-control-center-v2";
 const APP_SHELL = [
   "./",
   "./index.html",

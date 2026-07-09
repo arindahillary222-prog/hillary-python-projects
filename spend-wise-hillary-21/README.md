@@ -1,15 +1,16 @@
-# SPEND WISE-HILLARY 21
+# Student Control Center
 
-Installable student control center for international students in Germany.
+Installable public student control center.
 
 ## Features
 
-- Work compliance tracker for weekly hours and annual full-day allowance.
+- Work compliance tracker for weekly hours, actual shift days, and legal day-equivalent allowance.
 - Break minutes are excluded from worked hours.
-- Working time account banks extra weekly hours and supports manual carry-in/out.
-- Job wage profiles calculate expected money automatically for each shift.
-- Finance and expense tracker with euro categories.
-- Scholarship, ECTS, residence permit, and Google Calendar planning.
+- Working time account banks extra weekly hours per job and supports employer-confirmed hours.
+- Job wage profiles calculate expected gross automatically for each shift.
+- Payslips remain separate from shifts, with gross, net, unpaid, and actual bank income reconciled separately.
+- Finance and expense tracker with configurable currency categories.
+- Scholarship, ECTS, residence permit, AI Data Assistant, and Google Calendar planning.
 - Language selector, light/dark mode, offline-capable PWA install flow.
 
 ## Install

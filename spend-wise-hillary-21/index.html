@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#123c38">
-    <meta name="description" content="SPEND WISE-HILLARY 21 helps international students in Germany manage work compliance, money, scholarships, academics, residence permits, and calendar deadlines.">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="description" content="Student Control Center helps students manage work compliance, money, scholarships, academics, residence permits, and calendar deadlines.">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="SPEND WISE 21">
+    <meta name="apple-mobile-web-app-title" content="Control Center">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/logo.svg">
     <link rel="stylesheet" href="styles.css">
-    <title>SPEND WISE-HILLARY 21</title>
+    <title>Student Control Center</title>
   </head>
   <body>
     <div class="app-shell">
@@ -20,8 +20,8 @@
         <button class="brand" type="button" data-route="dashboard">
           <img src="assets/logo.svg" alt="" width="48" height="48">
           <span>
-            <strong>SPEND WISE</strong>
-            <small>HILLARY 21</small>
+            <strong>STUDENT</strong>
+            <small>CONTROL CENTER</small>
           </span>
         </button>
         <nav>
@@ -31,6 +31,7 @@
           <button class="nav-item" type="button" data-route="scholarships" data-i18n="navScholarships">Scholarships</button>
           <button class="nav-item" type="button" data-route="permit" data-i18n="navPermit">Residence Permit</button>
           <button class="nav-item" type="button" data-route="calendar" data-i18n="navCalendar">Calendar Sync</button>
+          <button class="nav-item" type="button" data-route="ai" data-i18n="navAi">AI Assistant</button>
           <button class="nav-item" type="button" data-route="settings" data-i18n="navSettings">Settings</button>
         </nav>
         <div class="privacy-card">
@@ -126,7 +127,10 @@
                 <h2 id="workHeading" data-i18n="workTitle">Work compliance tracker</h2>
                 <p data-i18n="workSub">Breaks are excluded automatically. Extra hours above the weekly limit are banked.</p>
               </div>
-              <button class="primary-button" id="addShiftButton" type="button" data-i18n="addShift">Add Shift</button>
+              <div class="button-row wrap">
+                <button class="quiet-button" id="addPayslipButton" type="button" data-i18n="addPayslip">Add Payslip</button>
+                <button class="primary-button" id="addShiftButton" type="button" data-i18n="addShift">Add Shift</button>
+              </div>
             </div>
             <div class="metric-grid compact" id="workMetricGrid"></div>
             <section class="panel">
@@ -136,6 +140,10 @@
               </div>
               <div class="account-grid">
                 <label>
+                  <span data-i18n="accountJob">Account job</span>
+                  <select id="timeAccountJob"></select>
+                </label>
+                <label>
                   <span data-i18n="manualCarry">Manual carry-in/out hours</span>
                   <input id="manualTimeCarry" type="number" step="0.25" inputmode="decimal">
                 </label>
@@ -143,18 +151,45 @@
                   <span data-i18n="compensatedHours">Compensated hours already taken</span>
                   <input id="compensatedHours" type="number" step="0.25" inputmode="decimal">
                 </label>
+                <label>
+                  <span data-i18n="confirmedBanked">Employer-confirmed banked hours</span>
+                  <input id="confirmedBankedHours" type="number" step="0.25" inputmode="decimal">
+                </label>
                 <div class="account-total">
                   <span data-i18n="bankedExtra">Banked extra hours</span>
                   <strong id="bankedExtraHours">0.00 h</strong>
                 </div>
               </div>
+              <div class="mini-list" id="timeAccountRows"></div>
             </section>
             <section class="panel table-panel">
               <div class="panel-head">
                 <h3 data-i18n="shiftLedger">Shift ledger</h3>
                 <div class="button-row">
                   <button class="quiet-button small" id="exportShiftsCsv" type="button" data-i18n="exportCsv">Export CSV</button>
+                  <button class="quiet-button small" id="exportShiftsPdf" type="button" data-i18n="exportPdf">Export PDF</button>
+                  <button class="quiet-button small" id="exportShiftsDocx" type="button" title="DOCX export is unavailable in this offline static build." disabled data-i18n="exportDocx">Export DOCX</button>
+                  <button class="quiet-button small" id="emailLedgerButton" type="button" data-i18n="emailShare">Email</button>
+                  <button class="quiet-button small" id="whatsAppLedgerButton" type="button" data-i18n="whatsAppShare">WhatsApp</button>
                 </div>
+              </div>
+              <div class="filter-grid">
+                <label>
+                  <span data-i18n="filterJob">Job / employer</span>
+                  <select id="ledgerJobFilter"></select>
+                </label>
+                <label>
+                  <span data-i18n="filterMonth">Month</span>
+                  <input id="ledgerMonthFilter" type="month">
+                </label>
+                <label>
+                  <span data-i18n="dateFrom">Date from</span>
+                  <input id="ledgerDateFrom" type="date">
+                </label>
+                <label>
+                  <span data-i18n="dateTo">Date to</span>
+                  <input id="ledgerDateTo" type="date">
+                </label>
               </div>
               <div class="responsive-table">
                 <table>
@@ -168,10 +203,32 @@
                       <th data-i18n="worked">Worked</th>
                       <th data-i18n="wage">Wage</th>
                       <th data-i18n="expectedPay">Expected money</th>
+                      <th data-i18n="paidStatus">Paid status</th>
                       <th data-i18n="actions">Actions</th>
                     </tr>
                   </thead>
                   <tbody id="shiftRows"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel table-panel">
+              <div class="panel-head">
+                <h3 data-i18n="payslipLedger">Payslips</h3>
+                <span class="status-pill" data-i18n="payslipsSeparate">Separate from shifts</span>
+              </div>
+              <div class="responsive-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-i18n="month">Month</th>
+                      <th data-i18n="job">Job</th>
+                      <th data-i18n="paidGross">Paid gross</th>
+                      <th data-i18n="paidNet">Paid net</th>
+                      <th data-i18n="hoursPaid">Hours paid</th>
+                      <th data-i18n="actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payslipRows"></tbody>
                 </table>
               </div>
             </section>
@@ -181,12 +238,19 @@
             <div class="section-head">
               <div>
                 <h2 id="financeHeading" data-i18n="financeTitle">Finance and expense tracker</h2>
-                <p data-i18n="financeSub">Log income and expenses in euros with fast categories.</p>
+                <p data-i18n="financeSub">Log income and expenses in your selected currency with fast categories.</p>
               </div>
               <button class="primary-button" id="addMoneyButton" type="button" data-i18n="addTransaction">Add Transaction</button>
             </div>
             <div class="quick-chips" id="quickExpenseChips"></div>
             <div class="metric-grid compact" id="financeMetricGrid"></div>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="payReconciliation">Pay reconciliation</h3>
+                <span class="status-pill" data-i18n="grossNetSeparated">Gross, net, unpaid, bank income separated</span>
+              </div>
+              <div class="stacked-list" id="payReconciliationRows"></div>
+            </section>
             <section class="panel table-panel">
               <div class="panel-head">
                 <h3 data-i18n="moneyLedger">Money ledger</h3>
@@ -292,6 +356,22 @@
             </section>
           </section>
 
+          <section class="view" id="view-ai" aria-labelledby="aiHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="aiHeading" data-i18n="aiTitle">AI Data Assistant</h2>
+                <p data-i18n="aiSub">Ask local questions about your own saved data. No API key is required.</p>
+              </div>
+            </div>
+            <section class="panel">
+              <div class="ai-box" id="aiMessages"></div>
+              <form class="ai-form" id="aiForm">
+                <input id="aiQuestion" type="text" placeholder="Ask about hours, banked time, unpaid gross, jobs, scholarships, or permits">
+                <button class="primary-button" type="submit" data-i18n="ask">Ask</button>
+              </form>
+            </section>
+          </section>
+
           <section class="view" id="view-settings" aria-labelledby="settingsHeading">
             <div class="section-head">
               <div>
@@ -315,6 +395,14 @@
                   <label>
                     <span data-i18n="monthlyBudget">Monthly budget</span>
                     <input id="monthlyBudget" type="number" min="0" step="10">
+                  </label>
+                  <label>
+                    <span data-i18n="currency">Currency</span>
+                    <input id="currencySetting" type="text" maxlength="3">
+                  </label>
+                  <label>
+                    <span data-i18n="countryMode">Country mode</span>
+                    <input id="countryMode" type="text">
                   </label>
                 </div>
               </section>
@@ -363,7 +451,7 @@
         <div class="dialog-head">
           <div>
             <p class="eyebrow" data-i18n="installable">Installable app</p>
-            <h2 data-i18n="installTitle">Install SPEND WISE-HILLARY 21</h2>
+            <h2 data-i18n="installTitle">Install Student Control Center</h2>
           </div>
           <button class="icon-button" id="closeInstallDialog" type="button" aria-label="Close">x</button>
         </div>
@@ -380,6 +468,23 @@
             <strong>Mac / Windows</strong>
             <p data-i18n="installLaptop">Open in Chrome or Edge and use the install icon in the address bar or browser menu.</p>
           </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="importPreviewDialog">
+      <div class="dialog-card">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow" data-i18n="importPreview">Import preview</p>
+            <h2 data-i18n="reviewImportedData">Review imported data</h2>
+          </div>
+          <button class="icon-button" id="cancelImportPreview" type="button" aria-label="Close">x</button>
+        </div>
+        <div class="stacked-list" id="importPreviewContent"></div>
+        <div class="dialog-actions">
+          <button class="quiet-button" id="rejectImportButton" type="button" data-i18n="cancel">Cancel</button>
+          <button class="primary-button" id="confirmImportButton" type="button" data-i18n="save">Save</button>
         </div>
       </div>
     </dialog>

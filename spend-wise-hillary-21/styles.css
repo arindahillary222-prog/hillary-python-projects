@@ -589,6 +589,17 @@ td strong {
   margin-bottom: 14px;
 }
 
+.filter-grid {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
 .chip {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -628,6 +639,48 @@ td strong {
   color: var(--muted);
   background: var(--panel-2);
   font-size: 12px;
+}
+
+.ai-box {
+  display: grid;
+  gap: 10px;
+  min-height: 260px;
+  max-height: 420px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.ai-message {
+  max-width: 78ch;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.ai-message p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+
+.ai-message.user {
+  margin-left: auto;
+  background: rgba(23, 107, 95, 0.12);
+}
+
+.ai-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 dialog {
@@ -744,6 +797,8 @@ html[dir="rtl"] .brand {
   .settings-grid,
   .card-grid,
   .account-grid,
+  .filter-grid,
+  .ai-form,
   .form-grid,
   .donut-wrap {
     grid-template-columns: 1fr;
