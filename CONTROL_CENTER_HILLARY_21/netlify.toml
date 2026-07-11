@@ -2,6 +2,9 @@
   publish = "."
   command = ""
 
+[functions]
+  directory = "netlify/functions"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -19,3 +22,15 @@
   for = "/index.html"
   [headers.values]
     Cache-Control = "no-cache"
+
+[[redirects]]
+  from = "/auth/*"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth"
+  status = 200
+  force = true

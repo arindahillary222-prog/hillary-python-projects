@@ -14,7 +14,10 @@ const files = [
   "_redirects",
   "netlify.toml",
   "assets/logo.svg",
-  "assets/maskable-icon.svg"
+  "assets/maskable-icon.svg",
+  "android/app/build.gradle",
+  "ios/App/PrivacyInfo.xcprivacy",
+  "netlify/functions/auth.js"
 ];
 
 for (const file of ["app.js", "sw.js"]) {
@@ -47,5 +50,11 @@ if (!/payslips:\s*\[\]/.test(app)) throw new Error("Fresh app data must start wi
 if (!/transactions:\s*\[\]/.test(app)) throw new Error("Fresh app data must start with no transactions.");
 if (!/scholarships:\s*\[\]/.test(app)) throw new Error("Fresh app data must start with no scholarships.");
 if (!app.includes("CONTROL CENTER Hillary.21")) throw new Error("App name must match CONTROL CENTER Hillary.21.");
+if (!fs.readFileSync(path.join(root, "android/app/build.gradle"), "utf8").includes("targetSdk 35")) {
+  throw new Error("Android target SDK must be 35.");
+}
+if (!fs.readFileSync(path.join(root, "ios/App/PrivacyInfo.xcprivacy"), "utf8").includes("NSPrivacyTracking")) {
+  throw new Error("Apple privacy manifest is required.");
+}
 
 console.log("Lint checks passed.");

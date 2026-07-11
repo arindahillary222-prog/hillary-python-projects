@@ -10,9 +10,6 @@
 /sw.js
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
 
-/manifest.webmanifest
-  Cache-Control: no-store, no-cache, must-revalidate, max-age=0
-
 /manifest.json
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
   Content-Type: application/manifest+json; charset=utf-8

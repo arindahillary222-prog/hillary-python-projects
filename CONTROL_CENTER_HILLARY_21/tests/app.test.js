@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
+const { readFile } = require("node:fs/promises");
 const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
@@ -58,7 +58,7 @@ function createElement() {
   };
 }
 
-function loadCore({ standalone = false, backing = {} } = {}) {
+async function loadCore({ standalone = false, backing = {} } = {}) {
   let uuid = 0;
   const storage = createStorage(backing);
   const document = {
@@ -115,13 +115,13 @@ function loadCore({ standalone = false, backing = {} } = {}) {
   };
 
   vm.createContext(sandbox);
-  const source = fs.readFileSync(path.join(root, "app.js"), "utf8");
+  const source = await readFile(path.join(root, "app.js"), "utf8");
   new vm.Script(source, { filename: "app.js" }).runInContext(sandbox);
   return { core: sandbox.window.StudentControlCenterCore, storage, backing };
 }
 
-test("starts with empty data and no legacy builder or demo details", () => {
-  const { core } = loadCore();
+test("starts with empty data and no legacy builder or demo details", async () => {
+  const { core } = await loadCore();
   const data = core.getEmptyAppData();
   assert.equal(data.version, "2.0.0");
   assertEmptyArray(data.jobs);
@@ -150,8 +150,8 @@ test("starts with empty data and no legacy builder or demo details", () => {
   assert.doesNotMatch(JSON.stringify(data), forbidden);
 });
 
-test("preserves imported data while normalizing and deduplicating ledgers", () => {
-  const { core } = loadCore();
+test("preserves imported data while normalizing and deduplicating ledgers", async () => {
+  const { core } = await loadCore();
   const imported = core.validateAndNormalizeAppData({
     version: "1.0.0",
     settings: { weeklyLimit: 18, currency: "usd", ectsCompleted: 42 },
@@ -179,11 +179,11 @@ test("preserves imported data while normalizing and deduplicating ledgers", () =
   assert.equal(imported.transactions.length, 1);
 });
 
-test("keeps browser storage separate from installed PWA storage", () => {
+test("keeps browser storage separate from installed PWA storage", async () => {
   const backing = {};
-  const browser = loadCore({ standalone: false, backing });
+  const browser = await loadCore({ standalone: false, backing });
   const browserKey = browser.core.getStorageKey();
-  const installed = loadCore({ standalone: true, backing });
+  const installed = await loadCore({ standalone: true, backing });
   const installedKey = installed.core.getStorageKey();
 
   assert.match(browserKey, /:browser:/);
@@ -193,8 +193,8 @@ test("keeps browser storage separate from installed PWA storage", () => {
   assert.equal(installed.core.shouldShowInstallButton(true), false);
 });
 
-test("calculates banked hours per job and respects employer-confirmed values", () => {
-  const { core } = loadCore();
+test("calculates banked hours per job and respects employer-confirmed values", async () => {
+  const { core } = await loadCore();
   const data = core.validateAndNormalizeAppData({
     jobs: [
       { id: "job-1", name: "Job One", weeklyLimitHours: 20, hourlyWageGross: 12 },
@@ -217,8 +217,8 @@ test("calculates banked hours per job and respects employer-confirmed values", (
   assert.equal(core.calculateTotalBankedHours(data), 11);
 });
 
-test("separates expected gross, paid gross, paid net, unpaid gross, and bank income", () => {
-  const { core } = loadCore();
+test("separates expected gross, paid gross, paid net, unpaid gross, and bank income", async () => {
+  const { core } = await loadCore();
   const data = core.validateAndNormalizeAppData({
     jobs: [{ id: "job-1", name: "Job One", hourlyWageGross: 20 }],
     shifts: [
@@ -236,8 +236,8 @@ test("separates expected gross, paid gross, paid net, unpaid gross, and bank inc
   assert.equal(core.getActualBankIncomeForJobMonth("job-1", "2026-07", data), 65);
 });
 
-test("supports local AI answers and sharing links without an API key", () => {
-  const { core } = loadCore();
+test("supports local AI answers and sharing links without an API key", async () => {
+  const { core } = await loadCore();
   const data = core.validateAndNormalizeAppData({
     jobs: [{ id: "job-1", name: "Lab Assistant", employerName: "University Lab", hourlyWageGross: 13 }],
     shifts: [{ jobId: "job-1", date: "2026-07-06", workedMinutes: 300 }],
@@ -249,4 +249,20 @@ test("supports local AI answers and sharing links without an API key", () => {
   assert.equal(core.createLedgerTitle({ name: "Lab Assistant", employerName: "University Lab" }, "2026-07"), "Shift Ledger - University Lab - 2026-07");
   assert.match(core.createEmailShareLink("Shift Ledger", "body text"), /^mailto:\?subject=Shift%20Ledger&body=body%20text$/);
   assert.match(core.createWhatsAppShareLink("hello world"), /^https:\/\/wa\.me\/\?text=hello%20world$/);
+});
+
+test("store compliance config targets SDK 35 and includes Apple privacy/auth", async () => {
+  const gradle = await readFile(path.join(root, "android/app/build.gradle"), "utf8");
+  assert.match(gradle, /compileSdk\s+35/);
+  assert.match(gradle, /targetSdk\s+35/);
+  assert.match(gradle, /JavaVersion\.VERSION_17/);
+
+  const privacy = await readFile(path.join(root, "ios/App/PrivacyInfo.xcprivacy"), "utf8");
+  assert.match(privacy, /NSPrivacyTracking/);
+  assert.match(privacy, /NSPrivacyAccessedAPICategoryFileTimestamp/);
+  assert.match(privacy, /NSPrivacyAccessedAPICategoryUserDefaults/);
+
+  const auth = await readFile(path.join(root, "netlify/functions/auth.js"), "utf8");
+  assert.match(auth, /loginWithApple/);
+  assert.match(auth, /disabledSocialProviders/);
 });

@@ -51,4 +51,18 @@ for (const token of requiredCode) {
   if (!app.includes(token)) throw new Error(`Missing required app feature: ${token}`);
 }
 
+const androidBuild = read("android/app/build.gradle");
+for (const token of ["compileSdk 35", "targetSdk 35", "JavaVersion.VERSION_17"]) {
+  if (!androidBuild.includes(token)) throw new Error(`Android store config missing ${token}`);
+}
+
+const privacyManifest = read("ios/App/PrivacyInfo.xcprivacy");
+for (const token of ["NSPrivacyTracking", "NSPrivacyAccessedAPICategoryFileTimestamp", "NSPrivacyAccessedAPICategoryUserDefaults"]) {
+  if (!privacyManifest.includes(token)) throw new Error(`Apple privacy manifest missing ${token}`);
+}
+
+const authRoute = read("netlify/functions/auth.js");
+if (!authRoute.includes("loginWithApple")) throw new Error("Auth route must support Sign in with Apple.");
+if (!authRoute.includes("disabledSocialProviders")) throw new Error("Auth route must block unsupported social providers.");
+
 console.log("Build validation passed.");
