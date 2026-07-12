@@ -38,3 +38,15 @@ test("active manifest is installable and branded", async () => {
   assert.equal(manifest.display, "standalone");
   assert.equal(manifest.start_url, "/");
 });
+
+test("job alerts support real mail providers with clear configuration status", async () => {
+  const cloudflareAlerts = await read("functions/api/alerts.js");
+  assert.match(cloudflareAlerts, /cloudflare-email/);
+  assert.match(cloudflareAlerts, /env\.EMAIL\.send/);
+  assert.match(cloudflareAlerts, /RESEND_API_KEY/);
+  assert.match(cloudflareAlerts, /ALERT_FROM_EMAIL/);
+  assert.match(cloudflareAlerts, /getEmailStatus/);
+
+  const app = await read("app.js");
+  assert.doesNotMatch(app, /Netlify alert service/);
+});
