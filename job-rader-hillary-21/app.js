@@ -184,7 +184,7 @@ const TRANSLATIONS = {
     alertStatusDefault: "Alerts are saved locally now. Email delivery activates when the mail service is connected.",
     alertNeedsRoleEmail: "Enter a role and email before creating an alert.",
     alertSavedLocal: "Alert saved. The app will watch this search locally and the backend will accept it when email delivery is configured.",
-    alertSavedServer: "Alert saved for email delivery. Matching jobs will be checked by the alert service.",
+    alertSavedServer: "Alert saved on the server. Email delivery will send when the mail provider is configured.",
     alertServerUnavailable: "Alert saved locally. Email delivery needs a verified sender and mail provider configuration.",
     localAlertsMatched: "{count} saved alert(s) match this live search. Email delivery will send them when configured.",
     noAlerts: "No alerts yet",

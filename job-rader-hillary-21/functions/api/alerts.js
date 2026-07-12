@@ -12,7 +12,10 @@ async function handleAlerts(request, env) {
   }
 
   if (request.method === "GET") {
-    return json(200, getEmailStatus(env));
+    return json(200, {
+      ...getEmailStatus(env),
+      storageConfigured: hasAlertStorage(env)
+    });
   }
 
   if (request.method !== "POST") {
@@ -31,6 +34,10 @@ async function handleAlerts(request, env) {
     return json(400, { error: "Alert email and role are required." });
   }
 
+  const storageResult = await storeAlert(env, alert).catch((error) => ({
+    stored: false,
+    error: error.message || "Alert storage failed."
+  }));
   const providerStatus = getEmailStatus(env);
   const delivery = providerStatus.emailConfigured
     ? await sendConfirmation(alert, env, providerStatus).catch((error) => ({
@@ -42,14 +49,16 @@ async function handleAlerts(request, env) {
 
   return json(202, {
     ok: true,
-    stored: false,
+    stored: storageResult.stored,
+    storageError: storageResult.error || "",
     emailConfigured: providerStatus.emailConfigured,
     confirmationSent: delivery.ok,
     deliveryProvider: delivery.provider,
     messageId: delivery.messageId || "",
     missing: providerStatus.missing,
-    message: createDeliveryMessage(providerStatus, delivery),
-    providerStatus
+    message: createDeliveryMessage(providerStatus, delivery, storageResult.stored),
+    providerStatus,
+    storageConfigured: hasAlertStorage(env)
   });
 }
 
@@ -81,12 +90,58 @@ function getEmailStatus(env) {
   };
 }
 
-function createDeliveryMessage(providerStatus, delivery) {
+function hasAlertStorage(env) {
+  return Boolean(env.JOB_RADER_ALERTS && typeof env.JOB_RADER_ALERTS.put === "function");
+}
+
+async function storeAlert(env, alert) {
+  if (!hasAlertStorage(env)) {
+    return { stored: false, error: "JOB_RADER_ALERTS binding is not configured." };
+  }
+
+  const storedAlert = {
+    ...alert,
+    updatedAt: new Date().toISOString(),
+    active: true,
+    lastNotifiedJobIds: [],
+    lastCheckedAt: ""
+  };
+  const indexKey = "alerts:index";
+  const alertKey = `alert:${storedAlert.id}`;
+  const currentIndex = await readJson(env.JOB_RADER_ALERTS, indexKey, []);
+  const nextIndex = [
+    storedAlert.id,
+    ...currentIndex.filter((id) => id !== storedAlert.id)
+  ].slice(0, 1000);
+
+  await Promise.all([
+    env.JOB_RADER_ALERTS.put(alertKey, JSON.stringify(storedAlert)),
+    env.JOB_RADER_ALERTS.put(indexKey, JSON.stringify(nextIndex))
+  ]);
+  return { stored: true };
+}
+
+async function readJson(kv, key, fallback) {
+  const raw = await kv.get(key);
+  if (!raw) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function createDeliveryMessage(providerStatus, delivery, stored) {
   if (delivery.ok) {
     return `Alert accepted. Confirmation email sent through ${delivery.provider}.`;
   }
   if (providerStatus.emailConfigured) {
     return `Alert accepted, but email delivery failed: ${delivery.error || "provider rejected the request"}`;
+  }
+  if (stored) {
+    return `Alert saved on the server. Configure ${providerStatus.missing.join(" and ")} in Cloudflare Pages to send real email alerts.`;
   }
   return `Alert accepted locally. Configure ${providerStatus.missing.join(" and ")} in Cloudflare Pages to send real email alerts.`;
 }

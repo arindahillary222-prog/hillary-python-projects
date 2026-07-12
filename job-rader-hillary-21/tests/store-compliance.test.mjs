@@ -46,6 +46,11 @@ test("job alerts support real mail providers with clear configuration status", a
   assert.match(cloudflareAlerts, /RESEND_API_KEY/);
   assert.match(cloudflareAlerts, /ALERT_FROM_EMAIL/);
   assert.match(cloudflareAlerts, /getEmailStatus/);
+  assert.match(cloudflareAlerts, /JOB_RADER_ALERTS/);
+  assert.match(cloudflareAlerts, /storeAlert/);
+
+  const wrangler = await read("wrangler.jsonc");
+  assert.match(wrangler, /JOB_RADER_ALERTS/);
 
   const app = await read("app.js");
   assert.doesNotMatch(app, /Netlify alert service/);
