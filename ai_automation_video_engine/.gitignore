@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.log
+data/
+temp_assets/*
+!temp_assets/.gitkeep
+tools/
+PUBLIC_HILLGRAM_LINK.txt
