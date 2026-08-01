@@ -1,0 +1,22 @@
+{
+  "name": "HILLGRAM by Hillary",
+  "short_name": "HILLGRAM",
+  "description": "Turn scripts into cinematic vertical videos with narration, visuals, captions, and downloadable MP4 exports.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#08080c",
+  "theme_color": "#08080c",
+  "orientation": "portrait-primary",
+  "categories": ["photo", "video", "entertainment", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

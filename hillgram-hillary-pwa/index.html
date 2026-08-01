@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#08080c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="HILLGRAM" />
+    <meta name="application-name" content="HILLGRAM" />
+    <meta
+      name="description"
+      content="HILLGRAM by Hillary — turn scripts into cinematic vertical Heels with narration, visuals, captions, and downloadable MP4 video."
+    />
+    <meta property="og:title" content="HILLGRAM by Hillary" />
+    <meta property="og:description" content="Create cinematic vertical videos from a script and install HILLGRAM on your phone." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hillgram-hillary.pages.dev/" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://hillgram-hillary.pages.dev/" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <title>HILLGRAM by Hillary</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #08080c;
+        color: #f8f7ff;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; background: #08080c; }
+      button, a, .brand { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+      button { font: inherit; }
+
+      .shell {
+        height: 100dvh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        padding-top: env(safe-area-inset-top);
+        background:
+          radial-gradient(circle at 10% 0%, rgba(255, 45, 117, .22), transparent 33%),
+          #08080c;
+      }
+
+      .bar {
+        min-height: 58px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px max(12px, env(safe-area-inset-right)) 9px max(14px, env(safe-area-inset-left));
+        border-bottom: 1px solid rgba(255, 255, 255, .08);
+        background: rgba(8, 8, 12, .92);
+        backdrop-filter: blur(18px);
+        z-index: 5;
+      }
+
+      .mark {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 13px;
+        background: linear-gradient(135deg, #ff2d75, #ff8a2a);
+        color: white;
+        font-weight: 950;
+        box-shadow: 0 9px 24px rgba(255, 45, 117, .28);
+      }
+
+      .brand { min-width: 0; flex: 1; }
+      .brand strong { display: block; font-size: 15px; letter-spacing: .08em; }
+      .brand span { display: block; color: #a9a7b7; font-size: 11px; margin-top: 1px; }
+
+      .action {
+        min-height: 39px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 999px;
+        padding: 0 15px;
+        color: #fff;
+        background: #171721;
+        cursor: pointer;
+        font-weight: 800;
+      }
+      .action.primary { border: 0; color: white; background: linear-gradient(135deg, #ff2d75, #ff8a2a); }
+      .action:focus-visible { outline: 3px solid rgba(255, 138, 42, .55); outline-offset: 2px; }
+
+      .app-frame { width: 100%; height: 100%; border: 0; background: #08080c; }
+
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 18px max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+        background: rgba(0, 0, 0, .66);
+        backdrop-filter: blur(8px);
+      }
+      .backdrop.open { display: flex; }
+      .sheet {
+        width: min(560px, 100%);
+        max-height: min(78dvh, 680px);
+        overflow: auto;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 26px;
+        padding: 22px;
+        background: linear-gradient(155deg, #1b1b27, #0d0d14);
+        box-shadow: 0 28px 90px rgba(0, 0, 0, .55);
+      }
+      .sheet h2 { margin: 0; font-size: clamp(24px, 7vw, 36px); line-height: 1; }
+      .sheet > p { color: #b9b7c6; line-height: 1.55; }
+      .steps { display: grid; gap: 10px; margin: 18px 0; }
+      .step { display: grid; grid-template-columns: 34px 1fr; gap: 11px; align-items: start; padding: 14px; border-radius: 17px; background: rgba(255, 255, 255, .055); }
+      .step b:first-child { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 45, 117, .18); color: #ff7ba7; }
+      .step strong { display: block; margin-bottom: 3px; }
+      .step span { color: #aaa8b8; font-size: 14px; line-height: 1.45; }
+      .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .sheet-actions .action { min-height: 48px; }
+
+      .toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(18px + env(safe-area-inset-bottom));
+        z-index: 30;
+        transform: translate(-50%, 140%);
+        border-radius: 999px;
+        padding: 11px 17px;
+        color: white;
+        background: #242431;
+        box-shadow: 0 14px 40px rgba(0,0,0,.45);
+        transition: transform .25s ease;
+        white-space: nowrap;
+      }
+      .toast.show { transform: translate(-50%, 0); }
+
+      @media (max-width: 460px) {
+        .bar { gap: 8px; }
+        .mark { width: 36px; height: 36px; border-radius: 11px; }
+        .brand span { display: none; }
+        .action { padding-inline: 12px; font-size: 13px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="bar">
+        <div class="mark" aria-hidden="true">Hg</div>
+        <div class="brand"><strong>HILLGRAM</strong><span>A Hillary original</span></div>
+        <button class="action" id="shareButton" type="button">Share</button>
+        <button class="action primary" id="installButton" type="button">Install</button>
+      </header>
+      <iframe
+        class="app-frame"
+        title="HILLGRAM cinematic social video studio"
+        src="https://hillgram-hillary.streamlit.app/?embed=true&embed_options=hide_loading_screen"
+        allow="camera; microphone; clipboard-write"
+        referrerpolicy="strict-origin-when-cross-origin"
+      ></iframe>
+    </main>
+
+    <section class="backdrop" id="installSheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+      <div class="sheet">
+        <h2 id="installTitle">Take HILLGRAM with you.</h2>
+        <p>Install the full-screen app in less than a minute. There is no app-store download for this preview.</p>
+        <div class="steps" id="iosSteps">
+          <div class="step"><b>1</b><div><strong>Open in Safari</strong><span>On iPhone or iPad, use Safari for installation.</span></div></div>
+          <div class="step"><b>2</b><div><strong>Tap Share</strong><span>Tap the square Share icon at the bottom of Safari.</span></div></div>
+          <div class="step"><b>3</b><div><strong>Add to Home Screen</strong><span>Choose Add to Home Screen, then tap Add.</span></div></div>
+        </div>
+        <div class="steps" id="androidSteps" hidden>
+          <div class="step"><b>1</b><div><strong>Open in Chrome</strong><span>Use Chrome on your Android phone or tablet.</span></div></div>
+          <div class="step"><b>2</b><div><strong>Open the menu</strong><span>Tap the three dots in the top-right corner.</span></div></div>
+          <div class="step"><b>3</b><div><strong>Install HILLGRAM</strong><span>Choose Install app or Add to Home screen and confirm.</span></div></div>
+        </div>
+        <div class="sheet-actions">
+          <button class="action" id="closeSheet" type="button">Not now</button>
+          <button class="action primary" id="nativeInstall" type="button">Install</button>
+        </div>
+      </div>
+    </section>
+    <div class="toast" id="toast" role="status" aria-live="polite">Link copied</div>
+
+    <script>
+      const installButton = document.querySelector('#installButton');
+      const nativeInstall = document.querySelector('#nativeInstall');
+      const shareButton = document.querySelector('#shareButton');
+      const sheet = document.querySelector('#installSheet');
+      const closeSheet = document.querySelector('#closeSheet');
+      const toast = document.querySelector('#toast');
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      let deferredInstall = null;
+
+      document.querySelector('#iosSteps').hidden = isAndroid;
+      document.querySelector('#androidSteps').hidden = !isAndroid;
+
+      function showSheet() { sheet.classList.add('open'); sheet.setAttribute('aria-hidden', 'false'); }
+      function hideSheet() { sheet.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true'); }
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2200);
+      }
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstall = event;
+      });
+
+      async function install() {
+        if (!deferredInstall) return showSheet();
+        deferredInstall.prompt();
+        await deferredInstall.userChoice;
+        deferredInstall = null;
+        hideSheet();
+      }
+
+      installButton.addEventListener('click', install);
+      nativeInstall.addEventListener('click', install);
+      closeSheet.addEventListener('click', hideSheet);
+      sheet.addEventListener('click', (event) => { if (event.target === sheet) hideSheet(); });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideSheet(); });
+
+      shareButton.addEventListener('click', async () => {
+        const shareData = {
+          title: 'HILLGRAM by Hillary',
+          text: 'Turn your script into a cinematic vertical video with HILLGRAM.',
+          url: 'https://hillgram-hillary.pages.dev/'
+        };
+        try {
+          if (navigator.share) await navigator.share(shareData);
+          else {
+            await navigator.clipboard.writeText(shareData.url);
+            showToast('HILLGRAM link copied');
+          }
+        } catch (error) {
+          if (error.name !== 'AbortError') showToast('Share from your browser menu');
+        }
+      });
+
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+    </script>
+  </body>
+</html>

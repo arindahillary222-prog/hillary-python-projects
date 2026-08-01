@@ -1,0 +1,12 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self "https://hillgram-hillary.streamlit.app"), microphone=(self "https://hillgram-hillary.streamlit.app"), geolocation=()
+  Content-Security-Policy: default-src 'self'; frame-src https://hillgram-hillary.streamlit.app; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'
+  Cache-Control: public, max-age=0, must-revalidate
+
+/icon.svg
+  Cache-Control: public, max-age=604800, immutable
+
+/sw.js
+  Cache-Control: no-cache
