@@ -2,6 +2,8 @@
 
 This Cloudflare Pages shell makes the hosted HILLGRAM Streamlit studio installable and easy to share.
 
+The shell uses a branded startup screen and the companion `hillgram-uptime` Cloudflare Worker. The Worker checks the live Streamlit runtime every 10 minutes so normal inactivity does not reach Streamlit's sleep window.
+
 Public app: `https://hillgram-hillary.pages.dev/`
 
 - iPhone/iPad: open in Safari, tap Share, choose Add to Home Screen, then Add.

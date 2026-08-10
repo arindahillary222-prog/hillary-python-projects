@@ -86,7 +86,72 @@
       .action.primary { border: 0; color: white; background: linear-gradient(135deg, #ff2d75, #ff8a2a); }
       .action:focus-visible { outline: 3px solid rgba(255, 138, 42, .55); outline-offset: 2px; }
 
+      .stage {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+        background: #08080c;
+      }
+
       .app-frame { width: 100%; height: 100%; border: 0; background: #08080c; }
+
+      .startup {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 50% 35%, rgba(255, 45, 117, .2), transparent 34%),
+          radial-gradient(circle at 58% 48%, rgba(255, 138, 42, .12), transparent 42%),
+          #08080c;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity .35s ease, visibility .35s ease;
+      }
+      .startup.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+      .startup-card { width: min(390px, 100%); text-align: center; }
+      .startup-mark {
+        position: relative;
+        width: 76px;
+        height: 76px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 22px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #ff2d75, #ff8a2a);
+        color: white;
+        font-size: 27px;
+        font-weight: 950;
+        box-shadow: 0 18px 55px rgba(255, 45, 117, .3);
+      }
+      .startup-mark::after {
+        content: "";
+        position: absolute;
+        inset: -9px;
+        border: 2px solid rgba(255, 104, 93, .28);
+        border-radius: 30px;
+        animation: breathe 1.5s ease-in-out infinite;
+      }
+      .startup-kicker { margin: 0 0 9px; color: #ff6d91; font-size: 12px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+      .startup h1 { margin: 0; font-size: clamp(28px, 7vw, 42px); line-height: 1.04; letter-spacing: -.035em; }
+      .startup-message { min-height: 48px; margin: 14px auto 0; color: #b9b7c6; line-height: 1.55; }
+      .progress { display: flex; justify-content: center; gap: 7px; margin-top: 20px; }
+      .progress i { width: 7px; height: 7px; border-radius: 50%; background: #ff5a75; animation: dot 1.15s ease-in-out infinite; }
+      .progress i:nth-child(2) { animation-delay: .14s; }
+      .progress i:nth-child(3) { animation-delay: .28s; }
+      .startup-retry { min-height: 44px; margin-top: 22px; padding-inline: 22px; }
+
+      @keyframes breathe {
+        0%, 100% { opacity: .35; transform: scale(.95); }
+        50% { opacity: 1; transform: scale(1.05); }
+      }
+      @keyframes dot {
+        0%, 70%, 100% { opacity: .3; transform: translateY(0); }
+        35% { opacity: 1; transform: translateY(-5px); }
+      }
 
       .backdrop {
         position: fixed;
@@ -142,6 +207,10 @@
         .brand span { display: none; }
         .action { padding-inline: 12px; font-size: 13px; }
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      }
     </style>
   </head>
   <body>
@@ -152,13 +221,26 @@
         <button class="action" id="shareButton" type="button">Share</button>
         <button class="action primary" id="installButton" type="button">Install</button>
       </header>
-      <iframe
-        class="app-frame"
-        title="HILLGRAM cinematic social video studio"
-        src="https://hillgram-hillary.streamlit.app/?embed=true&embed_options=hide_loading_screen"
-        allow="camera; microphone; clipboard-write"
-        referrerpolicy="strict-origin-when-cross-origin"
-      ></iframe>
+      <section class="stage" aria-label="HILLGRAM studio">
+        <div class="startup" id="startup" role="status" aria-live="polite" aria-busy="true">
+          <div class="startup-card">
+            <div class="startup-mark" aria-hidden="true">Hg</div>
+            <p class="startup-kicker">Hillary's video studio</p>
+            <h1>Preparing HILLGRAM</h1>
+            <p class="startup-message" id="startupMessage">Connecting to your creative engine&hellip;</p>
+            <div class="progress" aria-hidden="true"><i></i><i></i><i></i></div>
+            <button class="action primary startup-retry" id="startupRetry" type="button" hidden>Reconnect</button>
+          </div>
+        </div>
+        <iframe
+          class="app-frame"
+          id="appFrame"
+          title="HILLGRAM cinematic social video studio"
+          src="about:blank"
+          allow="camera; microphone; clipboard-write"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+      </section>
     </main>
 
     <section class="backdrop" id="installSheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="installTitle">
@@ -190,8 +272,17 @@
       const sheet = document.querySelector('#installSheet');
       const closeSheet = document.querySelector('#closeSheet');
       const toast = document.querySelector('#toast');
+      const appFrame = document.querySelector('#appFrame');
+      const startup = document.querySelector('#startup');
+      const startupMessage = document.querySelector('#startupMessage');
+      const startupRetry = document.querySelector('#startupRetry');
       const isAndroid = /Android/i.test(navigator.userAgent);
+      const STUDIO_URL = 'https://hillgram-hillary.streamlit.app/?embed=true&embed_options=hide_loading_screen';
+      const UPTIME_URL = 'https://hillgram-uptime.arindahillary222.workers.dev/health';
       let deferredInstall = null;
+      let startupAttempt = 0;
+      let startupTimer = null;
+      let retryTimer = null;
 
       document.querySelector('#iosSteps').hidden = isAndroid;
       document.querySelector('#androidSteps').hidden = !isAndroid;
@@ -203,6 +294,54 @@
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 2200);
       }
+
+      function showStartup(message) {
+        startupMessage.textContent = message;
+        startup.classList.remove('hidden');
+        startup.setAttribute('aria-busy', 'true');
+        startupRetry.hidden = true;
+      }
+
+      function hideStartup() {
+        startup.classList.add('hidden');
+        startup.setAttribute('aria-busy', 'false');
+        window.clearTimeout(retryTimer);
+      }
+
+      async function openStudio() {
+        const attempt = ++startupAttempt;
+        window.clearTimeout(startupTimer);
+        window.clearTimeout(retryTimer);
+        showStartup('Connecting to your creative engine\u2026');
+
+        retryTimer = window.setTimeout(() => {
+          if (attempt === startupAttempt && !startup.classList.contains('hidden')) {
+            startupMessage.textContent = 'The studio is taking longer than usual. Reconnect safely without losing your work.';
+            startupRetry.hidden = false;
+          }
+        }, 14000);
+
+        try {
+          const response = await fetch(UPTIME_URL, { cache: 'no-store' });
+          const state = await response.json();
+          if (!response.ok || !state.ok) throw new Error('Studio warm-up failed');
+          if (attempt !== startupAttempt) return;
+          startupMessage.textContent = 'HILLGRAM is awake. Opening your studio\u2026';
+        } catch {
+          if (attempt !== startupAttempt) return;
+          startupMessage.textContent = 'Reconnecting directly to HILLGRAM\u2026';
+        }
+
+        appFrame.src = STUDIO_URL;
+        startupTimer = window.setTimeout(hideStartup, 9000);
+      }
+
+      appFrame.addEventListener('load', () => {
+        if (appFrame.getAttribute('src') === 'about:blank') return;
+        window.clearTimeout(startupTimer);
+        startupTimer = window.setTimeout(hideStartup, 5500);
+      });
+      startupRetry.addEventListener('click', openStudio);
 
       window.addEventListener('beforeinstallprompt', (event) => {
         event.preventDefault();
@@ -241,6 +380,7 @@
       });
 
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+      openStudio();
     </script>
   </body>
 </html>
