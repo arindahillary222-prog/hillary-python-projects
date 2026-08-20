@@ -32,6 +32,10 @@ class DecisionEvaluation:
     expected_value: float | None
     fair_odds: float | None
     opportunity_score: float
+    net_expected_value: float | None = None
+    conservative_net_expected_value: float | None = None
+    effective_odds: float | None = None
+    minimum_acceptable_odds: float | None = None
 
 
 def _poisson(k: int, rate: float) -> float:
@@ -144,41 +148,74 @@ def evaluate_decision(
     unresolved_critical_intelligence: bool, min_ev: float = 0.03, min_reliability: float = 70,
     min_agreement: float = 65, min_completeness: float = 80, min_freshness: float = 70,
     min_lineup_certainty: float = 55, max_uncertainty_width: float = 0.18,
+    conservative_probability: float | None = None, tax_rate: float = 0.15, price_current: bool = True,
 ) -> DecisionEvaluation:
     if not 0 < probability < 1:
         raise QuantitativeInputError("Decision probabilities must be strictly between zero and one.")
+    if conservative_probability is not None and not 0 < conservative_probability < 1:
+        raise QuantitativeInputError("Conservative probability must be strictly between zero and one.")
+    if not 0 <= tax_rate < 1:
+        raise QuantitativeInputError("Tax rate must be in [0, 1).")
+    conservative = conservative_probability if conservative_probability is not None else probability
     reasons: list[str] = []
     watchable = False
     if completeness < min_completeness:
-        reasons.append("INSUFFICIENT_DATA")
+        reasons.append("NO_BET_INSUFFICIENT_SAMPLE" if completeness < 60 else "WATCH_DATA")
         watchable = True
     if freshness < min_freshness:
-        reasons.append("STALE_DATA")
-        watchable = True
+        reasons.append("NO_BET_DATA_STALE")
     if lineup_certainty < min_lineup_certainty:
-        reasons.append("LINEUPS_UNCERTAIN")
+        reasons.append("WATCH_LINEUP")
         watchable = True
     if unresolved_critical_intelligence:
-        reasons.append("UNRESOLVED_INTELLIGENCE")
+        reasons.append("WATCH_INJURY")
         watchable = True
     if agreement < min_agreement:
-        reasons.append("MODELS_DISAGREE")
+        reasons.append("NO_BET_MODELS_DISAGREE")
     if reliability < min_reliability:
-        reasons.append("RELIABILITY_INADEQUATE")
+        reasons.append("NO_BET_LOW_RELIABILITY")
     if uncertainty_width > max_uncertainty_width:
-        reasons.append("UNCERTAINTY_TOO_WIDE")
+        reasons.append("NO_BET_INSUFFICIENT_SAMPLE")
 
     ev = None if offered_odds is None else expected_value(probability, offered_odds)
+    effective = None
+    net_ev = None
+    conservative_net_ev = None
+    minimum_odds = None
     if offered_odds is None:
-        reasons.append("PRICE_REQUIRED")
+        reasons.append("WATCH_PRICE")
         watchable = True
-    elif ev < min_ev:
-        reasons.append("POOR_PRICE")
+    elif not price_current:
+        reasons.append("WATCH_PRICE")
+        watchable = True
+    else:
+        # Kept local to avoid a circular dependency with the market module.
+        effective = 1 + ((offered_odds - 1) * (1 - tax_rate))
+        net_ev = (probability * effective) - 1
+        conservative_net_ev = (conservative * effective) - 1
+        minimum_odds = 1 + ((((1 + min_ev) / conservative) - 1) / (1 - tax_rate))
+        if ev < min_ev:
+            reasons.append("NO_BET_PRICE")
+        if net_ev < min_ev:
+            reasons.append("NO_BET_TAX_ADJUSTED_EV")
+        if conservative_net_ev < min_ev:
+            reasons.append("NO_BET_CONSERVATIVE_EV")
 
-    hard_fail = {"MODELS_DISAGREE", "RELIABILITY_INADEQUATE", "UNCERTAINTY_TOO_WIDE", "POOR_PRICE"}
+    hard_fail = {
+        "NO_BET_PRICE", "NO_BET_TAX_ADJUSTED_EV", "NO_BET_CONSERVATIVE_EV", "NO_BET_LOW_RELIABILITY",
+        "NO_BET_MODELS_DISAGREE", "NO_BET_DATA_STALE", "NO_BET_INSUFFICIENT_SAMPLE",
+    }
     state = "QUALIFIED" if not reasons else ("WATCH" if watchable and not any(reason in hard_fail for reason in reasons) else "NO_BET")
-    opportunity = max(0.0, min(100.0, (max(ev or 0, 0) * 400) + (reliability * 0.35) + (agreement * 0.15) + (completeness * 0.1)))
-    return DecisionEvaluation(state, tuple(reasons), ev, fair_odds(probability), round(opportunity, 2))
+    if state == "QUALIFIED":
+        reasons.append("QUALIFIED_VALUE")
+    opportunity = max(0.0, min(100.0, (max(conservative_net_ev or 0, 0) * 400) + (reliability * 0.35) + (agreement * 0.15) + (completeness * 0.1)))
+    return DecisionEvaluation(
+        state, tuple(dict.fromkeys(reasons)), ev, fair_odds(probability), round(opportunity, 2),
+        net_expected_value=net_ev,
+        conservative_net_expected_value=conservative_net_ev,
+        effective_odds=effective,
+        minimum_acceptable_odds=minimum_odds,
+    )
 
 
 def calibration_buckets(predictions: Sequence[float], outcomes: Sequence[int]) -> list[dict[str, float | int | str]]:

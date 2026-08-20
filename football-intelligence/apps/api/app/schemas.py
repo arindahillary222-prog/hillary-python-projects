@@ -18,6 +18,12 @@ class PredictionSummary(BaseModel):
     market: str
     selection: str
     probability: float = Field(gt=0, lt=1)
+    football_model_probability: float | None = Field(default=None, gt=0, lt=1)
+    market_probability: float | None = Field(default=None, gt=0, lt=1)
+    final_calibrated_probability: float | None = Field(default=None, gt=0, lt=1)
+    conservative_probability: float | None = Field(default=None, gt=0, lt=1)
+    market_residual: float | None = None
+    devig_method_dispersion: float | None = Field(default=None, ge=0)
     fair_odds: float
     uncertainty_low: float = Field(ge=0, le=1)
     uncertainty_high: float = Field(ge=0, le=1)
@@ -44,6 +50,7 @@ class OfferRequest(BaseModel):
     decimal_odds: float = Field(gt=1, le=1000)
     weekly_bankroll_ugx: float = Field(default=100_000, ge=0, le=10_000_000_000)
     fractional_kelly: float = Field(default=0.10, ge=0, le=0.25)
+    observed_at: datetime | None = None
 
 
 class OfferEvaluation(BaseModel):
@@ -51,7 +58,13 @@ class OfferEvaluation(BaseModel):
     decision: Literal["QUALIFIED", "WATCH", "NO_BET"]
     reasons: list[str]
     expected_value_percent: float | None
+    net_expected_value_percent: float | None = None
+    conservative_net_expected_value_percent: float | None = None
+    effective_odds: float | None = None
+    minimum_acceptable_odds: float | None = None
+    price_current: bool = False
+    price_expires_at: datetime | None = None
+    tax_rate_percent: float | None = None
     fair_odds: float
     suggested_max_stake_ugx: float
     disclaimer: str
-

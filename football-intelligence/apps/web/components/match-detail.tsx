@@ -1,52 +1,75 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ProbabilityChart } from "./terminal-visuals";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const tabs = ["Overview", "Lineups", "Intelligence", "Model", "History"] as const;
+const tabs = ["Terminal", "Overview", "Intelligence", "Advanced", "History"] as const;
+const chartModes = ["Probability", "Market edge", "Odds", "xG", "Momentum", "Reliability", "Model vs market"] as const;
 type Tab = (typeof tabs)[number];
-
+type ChartMode = (typeof chartModes)[number];
 type Detail = {
-  fixture: { competition: string; home_team: string; away_team: string; kickoff_at: string; data_health: { status: string; completeness: number; freshness: number }; prediction: { probability: number; fair_odds: number; reliability: number; agreement: number; decision: string; reasons: string[]; model_version: string } };
+  fixture: { competition: string; home_team: string; away_team: string; kickoff_at: string; status: string; data_health: { status: string; completeness: number; freshness: number; updated_at?: string }; prediction: { market: string; selection: string; probability: number; football_model_probability?: number; market_probability?: number; final_calibrated_probability?: number; conservative_probability?: number; market_residual?: number; devig_method_dispersion?: number; fair_odds: number; uncertainty_low: number; uncertainty_high: number; reliability: number; agreement: number; decision: string; reasons: string[]; model_version: string } };
   lineup: { status: string; certainty: number; notice: string };
-  intelligence: { notice: string; corroboration: string; can_adjust_model: boolean };
+  intelligence: { notice: string; corroboration: string; can_adjust_model: boolean; items?: { source: string; source_tier: string; observed_at: string; event_type: string }[] };
   history: { history: { at: string; probability: number; decision: string; reason: string }[] };
+  terminal: { mode: string; live_data_status: string; connection_status: string; last_updated: string; snapshot: { status: string; score: string | null; minute: number | null; football_model_probability?: number; market_probability?: number; final_calibrated_probability?: number; conservative_probability?: number; reliability: number; market_residual?: number }; timeline: { at: string; probability: number }[]; events: unknown[]; statistics: unknown; notice: string };
 };
 
 const fallback: Detail = {
-  fixture: { competition: "Premier League", home_team: "Arsenal", away_team: "Chelsea", kickoff_at: "2026-08-24T15:00:00Z", data_health: { status: "AMBER", completeness: 78, freshness: 86 }, prediction: { probability: 0.49, fair_odds: 2.04, reliability: 70, agreement: 86, decision: "WATCH", reasons: ["LINEUPS_UNCERTAIN", "PRICE_REQUIRED"], model_version: "demo-quant-v0.1" } },
+  fixture: { competition: "Premier League", home_team: "Arsenal", away_team: "Chelsea", kickoff_at: "2026-08-24T15:00:00Z", status: "SCHEDULED", data_health: { status: "AMBER", completeness: 78, freshness: 86 }, prediction: { market: "1X2", selection: "Arsenal", probability: 0.49, football_model_probability: 0.50, market_probability: 0.47, final_calibrated_probability: 0.49, conservative_probability: 0.40, market_residual: 0.03, devig_method_dispersion: 0.01, fair_odds: 2.04, uncertainty_low: 0.40, uncertainty_high: 0.58, reliability: 70, agreement: 86, decision: "WATCH", reasons: ["WATCH_DATA", "WATCH_LINEUP", "WATCH_PRICE"], model_version: "demo-quant-v0.2" } },
   lineup: { status: "PREDICTED", certainty: 42, notice: "Connect a structured provider before treating any lineup as confirmed." },
-  intelligence: { notice: "No live news or social provider is configured. Demo evidence cannot change a prediction.", corroboration: "UNCONFIRMED", can_adjust_model: false },
+  intelligence: { notice: "No live news or social provider is configured. Demo evidence cannot change a prediction.", corroboration: "UNCONFIRMED", can_adjust_model: false, items: [] },
   history: { history: [{ at: "2026-08-21T00:00:00Z", probability: 0.49, decision: "WATCH", reason: "Initial timestamp-safe demo run; no live provider update has occurred." }] },
+  terminal: { mode: "DEMO", live_data_status: "UNAVAILABLE", connection_status: "OFFLINE", last_updated: "2026-08-21T00:00:00Z", snapshot: { status: "SCHEDULED", score: null, minute: null, football_model_probability: 0.50, market_probability: 0.47, final_calibrated_probability: 0.49, conservative_probability: 0.40, reliability: 70, market_residual: 0.03 }, timeline: [], events: [], statistics: null, notice: "No authorised live-score, market, or statistics provider is configured. The terminal will not simulate live movement." },
 };
 
+function pct(value: number | undefined) { return value === undefined ? "—" : `${(value * 100).toFixed(1)}%`; }
+function delta(value: number | undefined) { return value === undefined ? "—" : `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`; }
+
 export function MatchDetail({ fixtureId }: { fixtureId: string }) {
-  const [tab, setTab] = useState<Tab>("Overview");
+  const [tab, setTab] = useState<Tab>("Terminal");
+  const [chartMode, setChartMode] = useState<ChartMode>("Probability");
   const [detail, setDetail] = useState<Detail>(fallback);
-  const [connection, setConnection] = useState("DEMO");
+  const [connection, setConnection] = useState("DEMO DATA");
 
   useEffect(() => {
-    Promise.all([
-      fetch(`${apiUrl}/api/v1/fixtures/${fixtureId}`).then((response) => response.ok ? response.json() : Promise.reject()),
-      fetch(`${apiUrl}/api/v1/fixtures/${fixtureId}/lineup`).then((response) => response.ok ? response.json() : Promise.reject()),
-      fetch(`${apiUrl}/api/v1/fixtures/${fixtureId}/intelligence`).then((response) => response.ok ? response.json() : Promise.reject()),
-      fetch(`${apiUrl}/api/v1/fixtures/${fixtureId}/history`).then((response) => response.ok ? response.json() : Promise.reject()),
-    ]).then(([fixture, lineup, intelligence, history]) => {
-      setDetail({ fixture, lineup, intelligence, history });
-      setConnection("API CONNECTED");
-    }).catch(() => setConnection("DEMO"));
+    const controller = new AbortController();
+    const get = (path: string) => fetch(`${apiUrl}${path}`, { signal: controller.signal }).then((response) => response.ok ? response.json() : Promise.reject(new Error("API unavailable")));
+    Promise.all([get(`/api/v1/fixtures/${fixtureId}`), get(`/api/v1/fixtures/${fixtureId}/lineup`), get(`/api/v1/fixtures/${fixtureId}/intelligence`), get(`/api/v1/fixtures/${fixtureId}/history`), get(`/api/v1/fixtures/${fixtureId}/terminal`)])
+      .then(([fixture, lineup, intelligence, history, terminal]) => { setDetail({ fixture, lineup, intelligence, history, terminal }); setConnection("API CONNECTED"); })
+      .catch(() => undefined);
+    return () => controller.abort();
   }, [fixtureId]);
 
-  const { fixture, lineup, intelligence, history } = detail;
-  return <main>
-    <header className="topbar"><Link className="text-link" href="/">← Dashboard</Link><span className="connection demo">{connection}</span></header>
-    <section className="hero compact"><p className="eyebrow">MATCH DETAIL · {fixture.competition}</p><h1>{fixture.home_team}<br /><em>vs {fixture.away_team}</em></h1><p className="subtle">Kickoff {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(fixture.kickoff_at))}. Every state is timestamped and updateable.</p></section>
-    <nav className="tabs" aria-label="Match detail sections">{tabs.map((item) => <button className={item === tab ? "active" : ""} key={item} type="button" onClick={() => setTab(item)}>{item}</button>)}</nav>
-    {tab === "Overview" && <section className="detail-grid"><article className="panel"><p className="eyebrow">DECISION</p><h2>{fixture.prediction.decision.replace("_", " ")}</h2><p>{fixture.prediction.reasons.map((reason) => reason.replaceAll("_", " ")).join(" · ")}</p></article><article className="panel"><p className="eyebrow">DATA HEALTH</p><h2>{fixture.data_health.status}</h2><p>{fixture.data_health.completeness}% complete · {fixture.data_health.freshness}% fresh</p></article></section>}
-    {tab === "Lineups" && <section className="panel"><p className="eyebrow">LINEUP STATE</p><h2>{lineup.status} · {lineup.certainty}% certainty</h2><p>{lineup.notice}</p></section>}
-    {tab === "Intelligence" && <section className="panel"><p className="eyebrow">SOURCE PROVENANCE</p><h2>{intelligence.corroboration.replace("_", " ")}</h2><p>{intelligence.notice}</p><p>Automatic model adjustment: <strong>{intelligence.can_adjust_model ? "allowed after corroboration" : "blocked"}</strong></p></section>}
-    {tab === "Model" && <section className="detail-grid"><article className="panel"><p className="eyebrow">PROBABILITY</p><h2>{(fixture.prediction.probability * 100).toFixed(1)}%</h2><p>Fair odds {fixture.prediction.fair_odds.toFixed(2)} · Model {fixture.prediction.model_version}</p></article><article className="panel"><p className="eyebrow">RELIABILITY ≠ PROBABILITY</p><h2>{fixture.prediction.reliability}/100</h2><p>{fixture.prediction.agreement}% model agreement, displayed separately from outcome probability.</p></article></section>}
-    {tab === "History" && <section className="panel"><p className="eyebrow">WHAT CHANGED?</p>{history.history.map((item) => <div className="history-item" key={item.at}><strong>{new Date(item.at).toLocaleString()} · {(item.probability * 100).toFixed(1)}% · {item.decision}</strong><p>{item.reason}</p></div>)}</section>}
+  const { fixture, lineup, intelligence, history, terminal } = detail;
+  const prediction = fixture.prediction;
+  const points = useMemo(() => terminal.timeline.length ? terminal.timeline.map((point) => ({ value: point.probability * 100, label: new Date(point.at).toLocaleTimeString() })) : history.history.map((item) => ({ value: item.probability * 100, label: new Date(item.at).toLocaleString() })), [terminal.timeline, history.history]);
+  const kickoff = useMemo(() => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(fixture.kickoff_at)), [fixture.kickoff_at]);
+
+  return <main className="terminal-shell match-terminal">
+    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">{connection}</span></div></header>
+    <section className="market-ticker detail-ticker"><span className="ticker-score">{terminal.live_data_status === "LIVE" ? "LIVE" : "PRE"}</span><strong>{fixture.home_team.slice(0, 3).toUpperCase()}–{fixture.away_team.slice(0, 3).toUpperCase()}</strong><span>{prediction.selection} {pct(prediction.final_calibrated_probability ?? prediction.probability)}</span><b className="movement up">{delta(prediction.market_residual)}</b><span className="ticker-notice">{terminal.live_data_status === "LIVE" ? "TIMESTAMPED PROVIDER DATA" : "DEMO DATA · NOT LIVE"}</span></section>
+
+    <section className="match-hero"><div><p className="eyebrow">{fixture.competition} · {fixture.status}</p><h1>{fixture.home_team} <span>vs</span> {fixture.away_team}</h1><p>Kickoff {kickoff}</p></div><div className="score-console"><span>{terminal.live_data_status === "LIVE" ? "LIVE SCORE" : "SCHEDULED"}</span><strong>{terminal.snapshot.score ?? "— – —"}</strong><b>{terminal.snapshot.minute === null ? "AWAITING KICKOFF" : `${terminal.snapshot.minute.toFixed(0)}'`}</b></div></section>
+    <div className="terminal-warning"><span className="status-dot amber" /><strong>{terminal.live_data_status === "LIVE" ? "LIVE CONNECTION" : "DEMO DATA — LIVE PROVIDER UNAVAILABLE"}</strong><p>{terminal.notice}</p></div>
+    <nav className="terminal-tabs" aria-label="Match detail sections">{tabs.map((item) => <button className={item === tab ? "active" : ""} key={item} type="button" onClick={() => setTab(item)}>{item}</button>)}</nav>
+
+    {tab === "Terminal" ? <section className="live-layout"><div className="terminal-chart-wrap"><div className="chart-controls" aria-label="Chart mode">{chartModes.map((mode) => <button key={mode} type="button" className={mode === chartMode ? "active" : ""} onClick={() => setChartMode(mode)}>{mode}</button>)}</div><ProbabilityChart points={chartMode === "Probability" ? points : []} mode={chartMode} headline={chartMode === "Probability" ? `${prediction.selection} probability` : `${chartMode} history`} /></div><aside className="probability-panel"><p className="eyebrow">CURRENT MODEL STATE</p><ProbabilityRow label="Football model" value={pct(terminal.snapshot.football_model_probability)} /><ProbabilityRow label="Market benchmark" value={pct(terminal.snapshot.market_probability)} /><ProbabilityRow label="Final calibrated" value={pct(terminal.snapshot.final_calibrated_probability)} strong /><ProbabilityRow label="Conservative" value={pct(terminal.snapshot.conservative_probability)} /><ProbabilityRow label="Reliability" value={`${terminal.snapshot.reliability.toFixed(0)}/100`} /><div className="edge-callout"><span>MODEL–MARKET EDGE</span><strong className="movement up">{delta(terminal.snapshot.market_residual)}</strong></div></aside></section> : null}
+
+    {tab === "Terminal" ? <section className="terminal-secondary"><article className="recommendation-box"><p className="eyebrow">PRE-MATCH RECOMMENDATION</p><h2>{prediction.selection} · {prediction.market}</h2><div className="recommendation-metrics"><Metric label="Model" value={pct(prediction.final_calibrated_probability ?? prediction.probability)} /><Metric label="Conservative" value={pct(prediction.conservative_probability)} /><Metric label="Fair odds" value={prediction.fair_odds.toFixed(2)} /><Metric label="Reliability" value={`${prediction.reliability.toFixed(0)}/100`} /></div><span className="state-pill watch">{prediction.decision.replace("_", " ")}</span><p className="note">Enter a current manual price on the desk to calculate tax-adjusted EV and a price expiry time.</p></article><article className="stats-box"><p className="eyebrow">LIVE STATISTICS</p><h2>{terminal.statistics ? "Provider statistics" : "No live statistics"}</h2><p>Shots, xG, possession, cards and player ratings remain unavailable until a provider supplies timestamped data.</p><div className="unavailable-grid"><span>xG — : —</span><span>Shots — : —</span><span>Cards — : —</span><span>Possession — : —</span></div></article><article className="timeline-box"><p className="eyebrow">INTELLIGENCE TIMELINE</p><h2>{terminal.events.length ? "Provider events" : "No live events"}</h2><p>Goals, VAR, cards, substitutions and major market movement will appear here with source timestamps — never simulated.</p></article></section> : null}
+
+    {tab === "Overview" ? <section className="detail-columns"><article className="detail-card"><p className="eyebrow">DECISION GATES</p><h2>{prediction.decision.replace("_", " ")}</h2><div className="reason-list">{prediction.reasons.map((reason) => <span key={reason}>{reason.replaceAll("_", " ")}</span>)}</div><p>Qualification is blocked until all configured gates, including current price and conservative net EV, pass.</p></article><article className="detail-card"><p className="eyebrow">DATA HEALTH</p><h2>{fixture.data_health.status}</h2><Metric label="Completeness" value={`${fixture.data_health.completeness}%`} /><Metric label="Freshness" value={`${fixture.data_health.freshness}%`} /><Metric label="Lineup certainty" value={`${lineup.certainty}%`} /></article></section> : null}
+
+    {tab === "Intelligence" ? <section className="detail-columns"><article className="detail-card"><p className="eyebrow">SOURCE PROVENANCE</p><h2>{intelligence.corroboration.replace("_", " ")}</h2><p>{intelligence.notice}</p><p>Automatic model adjustment: <strong>{intelligence.can_adjust_model ? "allowed after corroboration" : "blocked"}</strong></p></article><article className="detail-card"><p className="eyebrow">LINEUP STATE</p><h2>{lineup.status} · {lineup.certainty}%</h2><p>{lineup.notice}</p></article></section> : null}
+
+    {tab === "Advanced" ? <section className="advanced-grid"><Metric label="Football model probability" value={pct(prediction.football_model_probability)} /><Metric label="De-vigged market probability" value={pct(prediction.market_probability)} /><Metric label="Final calibrated probability" value={pct(prediction.final_calibrated_probability ?? prediction.probability)} /><Metric label="Conservative probability" value={pct(prediction.conservative_probability)} /><Metric label="Uncertainty interval" value={`${pct(prediction.uncertainty_low)}–${pct(prediction.uncertainty_high)}`} /><Metric label="Model agreement" value={`${prediction.agreement.toFixed(0)}/100`} /><Metric label="De-vig dispersion" value={prediction.devig_method_dispersion === undefined ? "—" : `${(prediction.devig_method_dispersion * 100).toFixed(2)} pp`} /><Metric label="Model version" value={prediction.model_version} /></section> : null}
+
+    {tab === "History" ? <section className="ledger-panel"><p className="eyebrow">IMMUTABLE PREDICTION LEDGER</p><h2>What changed, and when?</h2>{history.history.map((item) => <article className="ledger-entry" key={item.at}><span>{new Date(item.at).toLocaleString()}</span><strong>{(item.probability * 100).toFixed(1)}% · {item.decision}</strong><p>{item.reason}</p></article>)}</section> : null}
+    <footer>ARAwee/MAYEKU-SPORTZ · {terminal.mode} · Live in-play recommendations remain informational until separately validated.</footer>
   </main>;
 }
+
+function ProbabilityRow({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) { return <div className={`probability-row ${strong ? "emphasis" : ""}`}><span>{label}</span><strong>{value}</strong></div>; }
+function Metric({ label, value }: { label: string; value: string }) { return <div className="detail-metric"><span>{label}</span><strong>{value}</strong></div>; }

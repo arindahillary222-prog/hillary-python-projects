@@ -11,6 +11,7 @@ import sentry_sdk
 
 from app.demo import demo_fixture
 from app.intelligence import assess_corroboration, demo_evidence
+from app.models.market import price_freshness
 from app.models.quant import evaluate_decision, fractional_kelly
 from app.schemas import DataHealth, FixtureSummary, OfferEvaluation, OfferRequest
 from app.settings import get_settings
@@ -23,7 +24,7 @@ if settings.sentry_dsn:
         enable_tracing=False,
         send_default_pii=False,
     )
-app = FastAPI(title="Football Intelligence API", version="0.1.0", docs_url="/docs" if settings.app_env != "production" else None)
+app = FastAPI(title="Arawee/Mayeku-Sportz API", version="0.2.0", docs_url="/docs" if settings.app_env != "production" else None)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[str(settings.web_origin).rstrip("/")],
@@ -149,24 +150,62 @@ async def fixture_prediction_history(fixture_id: str) -> dict:
     }
 
 
+@app.get("/api/v1/fixtures/{fixture_id}/terminal")
+async def fixture_terminal(fixture_id: str) -> dict:
+    """Return an explicitly labelled terminal state without fabricating a live feed."""
+    fixture = get_demo_fixture_or_404(fixture_id)
+    prediction = fixture.prediction
+    return {
+        "mode": "DEMO",
+        "live_data_status": "UNAVAILABLE",
+        "connection_status": "OFFLINE",
+        "last_updated": fixture.data_health.updated_at,
+        "snapshot": {
+            "status": fixture.status,
+            "score": None,
+            "minute": None,
+            "football_model_probability": prediction.football_model_probability,
+            "market_probability": prediction.market_probability,
+            "final_calibrated_probability": prediction.final_calibrated_probability,
+            "conservative_probability": prediction.conservative_probability,
+            "reliability": prediction.reliability,
+            "market_residual": prediction.market_residual,
+        },
+        "timeline": [],
+        "events": [],
+        "statistics": None,
+        "notice": "No authorised live-score, market, or statistics provider is configured. The terminal will not simulate live movement.",
+    }
+
+
 @app.post("/api/v1/fixtures/{fixture_id}/evaluate-offer", response_model=OfferEvaluation)
 async def evaluate_offer(fixture_id: str, offer: OfferRequest) -> OfferEvaluation:
     fixture = get_demo_fixture_or_404(fixture_id)
     prediction = fixture.prediction
+    price_status = price_freshness(offer.observed_at or datetime.now(UTC), ttl_seconds=300)
+    conservative_probability = prediction.conservative_probability or prediction.probability
     evaluation = evaluate_decision(
-        probability=prediction.probability, offered_odds=offer.decimal_odds,
+        probability=prediction.final_calibrated_probability or prediction.probability, offered_odds=offer.decimal_odds,
         reliability=prediction.reliability, agreement=prediction.agreement,
         completeness=fixture.data_health.completeness, freshness=fixture.data_health.freshness,
         lineup_certainty=42, uncertainty_width=prediction.uncertainty_high - prediction.uncertainty_low,
-        unresolved_critical_intelligence=False,
+        unresolved_critical_intelligence=False, conservative_probability=conservative_probability,
+        tax_rate=0.15, price_current=price_status.is_current,
     )
-    stake_fraction = fractional_kelly(prediction.probability, offer.decimal_odds, offer.fractional_kelly)
+    stake_fraction = fractional_kelly(conservative_probability, offer.decimal_odds, offer.fractional_kelly)
     return OfferEvaluation(
         fixture_id=fixture_id, decision=evaluation.state, reasons=list(evaluation.reasons),
         expected_value_percent=round((evaluation.expected_value or 0) * 100, 1),
+        net_expected_value_percent=round((evaluation.net_expected_value or 0) * 100, 1),
+        conservative_net_expected_value_percent=round((evaluation.conservative_net_expected_value or 0) * 100, 1),
+        effective_odds=round(evaluation.effective_odds or 0, 3),
+        minimum_acceptable_odds=round(evaluation.minimum_acceptable_odds or 0, 3),
+        price_current=price_status.is_current,
+        price_expires_at=price_status.expires_at,
+        tax_rate_percent=15,
         fair_odds=round(evaluation.fair_odds or 0, 2),
         suggested_max_stake_ugx=round(offer.weekly_bankroll_ugx * stake_fraction, 0),
-        disclaimer="Demo decision-support calculation only. You place any wager manually; no bookmaker is accessed.",
+        disclaimer="Demo decision-support calculation only. Uganda's configurable 15% tax is applied to net winnings for this illustration. You place any wager manually; no bookmaker is accessed.",
     )
 
 
@@ -193,4 +232,4 @@ async def alerts() -> dict:
 
 @app.get("/api/v1/models/health")
 async def model_health() -> dict:
-    return {"mode": "DEMO", "model_version": "demo-quant-v0.1", "shadow_mode": True, "calibration": "pending historical validation", "recommendations_enabled": False}
+    return {"mode": "DEMO", "model_version": "demo-quant-v0.2", "shadow_mode": True, "calibration": "pending historical validation", "recommendations_enabled": False, "live_recommendations_enabled": False}

@@ -3,12 +3,12 @@ import { PwaRegister } from "../components/pwa-register";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Football Intelligence",
-  description: "Evidence-led football probability and value analysis.",
+  title: "Arawee/Mayeku-Sportz",
+  description: "A live financial terminal for evidence-led football intelligence.",
   manifest: "/manifest.webmanifest",
 };
 
-export const viewport: Viewport = { themeColor: "#09111f", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#070b14", colorScheme: "dark light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body className="min-h-screen"><PwaRegister />{children}</body></html>;

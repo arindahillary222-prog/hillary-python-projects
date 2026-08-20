@@ -49,7 +49,8 @@ def test_no_bet_for_negative_value() -> None:
         unresolved_critical_intelligence=False,
     )
     assert decision.state == "NO_BET"
-    assert "POOR_PRICE" in decision.reasons
+    assert "NO_BET_PRICE" in decision.reasons
+    assert "NO_BET_CONSERVATIVE_EV" in decision.reasons
 
 
 def test_watch_when_waiting_for_lineups_and_price() -> None:
@@ -59,4 +60,4 @@ def test_watch_when_waiting_for_lineups_and_price() -> None:
         unresolved_critical_intelligence=False,
     )
     assert decision.state == "WATCH"
-    assert {"LINEUPS_UNCERTAIN", "PRICE_REQUIRED"}.issubset(decision.reasons)
+    assert {"WATCH_LINEUP", "WATCH_PRICE"}.issubset(decision.reasons)
