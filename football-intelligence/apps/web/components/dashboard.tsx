@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { InstallApp } from "./install-app";
 import { LiveSparkline } from "./terminal-visuals";
 
 type Decision = "QUALIFIED" | "WATCH" | "NO_BET";
@@ -20,7 +21,7 @@ type Offer = {
   price_current: boolean; price_expires_at?: string | null; tax_rate_percent?: number | null; fair_odds: number; suggested_max_stake_ugx: number; disclaimer: string;
 };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const fallback: Fixture = {
   id: "demo-ars-che", competition: "Premier League", kickoff_at: "2026-08-24T15:00:00Z", home_team: "Arsenal", away_team: "Chelsea", status: "SCHEDULED", demo: true,
   data_health: { status: "AMBER", completeness: 78, freshness: 86, source: "DEMO · deterministic development sample", updated_at: "2026-08-21T00:00:00Z" },
@@ -41,6 +42,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!apiUrl) return;
     const controller = new AbortController();
     fetch(`${apiUrl}/api/v1/fixtures`, { headers: { Accept: "application/json" }, signal: controller.signal })
       .then((response) => response.ok ? response.json() as Promise<Fixture[]> : Promise.reject(new Error("API unavailable")))
@@ -57,6 +59,11 @@ export function Dashboard() {
   async function evaluate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
+    if (!apiUrl) {
+      setOffer({ decision: "WATCH", reasons: ["WATCH_PRICE"], expected_value_percent: null, net_expected_value_percent: null, conservative_net_expected_value_percent: null, price_current: false, fair_odds: fixture.prediction.fair_odds, suggested_max_stake_ugx: 0, disclaimer: "The public demo has no connected pricing API. Run the local API to calculate a timestamped manual price. No bookmaker is contacted." });
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch(`${apiUrl}/api/v1/fixtures/${fixture.id}/evaluate-offer`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decimal_odds: Number(price), weekly_bankroll_ugx: 100000, fractional_kelly: 0.1 }) });
       if (!response.ok) throw new Error("Unable to evaluate the entered price");
@@ -69,7 +76,7 @@ export function Dashboard() {
   return <main className="terminal-shell">
     <header className="terminal-topbar">
       <Link className="terminal-brand" href="/" aria-label="Arawee/Mayeku-Sportz home"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Football intelligence terminal</small></span></Link>
-      <div className="topbar-status"><span className="mode-flag">{connection}</span><span className="status-dot amber" /> <span>SHADOW MODE</span></div>
+      <div className="topbar-status"><InstallApp /><span className="mode-flag">{connection}</span><span className="status-dot amber" /> <span>SHADOW MODE</span></div>
     </header>
 
     <section className="market-ticker" aria-label="Match ticker">

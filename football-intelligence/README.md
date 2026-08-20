@@ -45,9 +45,18 @@ Providers / StatsBomb Open Data
 - The client never receives provider keys or Supabase service-role credentials.
 - The public app accesses product data through FastAPI; Supabase RLS is enabled on every exposed table.
 
-## Deployment
+## Public web release
 
-GitHub Actions runs tests and production builds for each push and pull request. Create/link a Supabase project before applying migrations. For the web deployment, import the GitHub repository in Vercel and set its **Root Directory** to `football-intelligence/apps/web`; the committed `vercel.json` uses the pinned pnpm build. Deploy the FastAPI container separately (or behind a managed container service) and set `NEXT_PUBLIC_API_URL` to that API origin. Add only the names—not values—listed in `.env.example` as deployment environment variables. Optional Sentry capture activates only when the API receives `SENTRY_DSN`; it deliberately sends no default PII. See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) and [docs/OPERATIONS.md](docs/OPERATIONS.md).
+The public terminal is a static, installable PWA. The release build intentionally contains only the clearly labelled demo/shadow data; it never attempts to call a visitor's `localhost`, connect to a bookmaker, or expose a provider credential.
+
+Users can install it from the app's **Install app** button:
+
+- **iPhone/iPad:** open the shared link in Safari, tap **Share**, then **Add to Home Screen**.
+- **Android:** open the shared link in Chrome, open the ⋮ menu, then choose **Install app** or **Add to Home screen**.
+
+For a future Pages update, run `pnpm run typecheck && pnpm run build` inside `apps/web`, then deploy the generated `out` folder with `pnpm dlx wrangler@latest pages deploy out --project-name=arawee-mayeku-sportz-hillary`. The existing GitHub Actions workflow continues to test every pushed change; the Pages project is a direct-upload deployment, so releases are published through that explicit command.
+
+Deploy the FastAPI service separately only when an authorised live API is ready, then set `NEXT_PUBLIC_API_URL` at build time to that API's public HTTPS origin. Create/link a Supabase project before applying migrations. Add only the names—not values—listed in `.env.example` as deployment environment variables. Optional Sentry capture activates only when the API receives `SENTRY_DSN`; it deliberately sends no default PII. See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md), [docs/OPERATIONS.md](docs/OPERATIONS.md), and [docs/PUBLIC_RELEASE.md](docs/PUBLIC_RELEASE.md).
 
 ## Current delivery status
 

@@ -1,5 +1,5 @@
-const CACHE_NAME = "arawee-mayeku-sportz-shell-v2";
-const APP_SHELL = ["/manifest.webmanifest", "/icon.svg"];
+const CACHE_NAME = "arawee-mayeku-sportz-shell-v3";
+const APP_SHELL = ["/", "/fixtures/demo-ars-che/", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -26,7 +26,8 @@ async function networkFirst(request) {
 }
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || new URL(event.request.url).origin !== self.location.origin) return;
+  const requestUrl = new URL(event.request.url);
+  if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin || requestUrl.pathname.startsWith("/api/") || requestUrl.pathname === "/sw.js") return;
   if (event.request.mode === "navigate") {
     event.respondWith(networkFirst(event.request));
     return;

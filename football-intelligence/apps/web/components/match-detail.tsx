@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { InstallApp } from "./install-app";
 import { ProbabilityChart } from "./terminal-visuals";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const tabs = ["Terminal", "Overview", "Intelligence", "Advanced", "History"] as const;
 const chartModes = ["Probability", "Market edge", "Odds", "xG", "Momentum", "Reliability", "Model vs market"] as const;
 type Tab = (typeof tabs)[number];
@@ -35,6 +36,7 @@ export function MatchDetail({ fixtureId }: { fixtureId: string }) {
   const [connection, setConnection] = useState("DEMO DATA");
 
   useEffect(() => {
+    if (!apiUrl) return;
     const controller = new AbortController();
     const get = (path: string) => fetch(`${apiUrl}${path}`, { signal: controller.signal }).then((response) => response.ok ? response.json() : Promise.reject(new Error("API unavailable")));
     Promise.all([get(`/api/v1/fixtures/${fixtureId}`), get(`/api/v1/fixtures/${fixtureId}/lineup`), get(`/api/v1/fixtures/${fixtureId}/intelligence`), get(`/api/v1/fixtures/${fixtureId}/history`), get(`/api/v1/fixtures/${fixtureId}/terminal`)])
@@ -49,7 +51,7 @@ export function MatchDetail({ fixtureId }: { fixtureId: string }) {
   const kickoff = useMemo(() => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(fixture.kickoff_at)), [fixture.kickoff_at]);
 
   return <main className="terminal-shell match-terminal">
-    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">{connection}</span></div></header>
+    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><InstallApp /><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">{connection}</span></div></header>
     <section className="market-ticker detail-ticker"><span className="ticker-score">{terminal.live_data_status === "LIVE" ? "LIVE" : "PRE"}</span><strong>{fixture.home_team.slice(0, 3).toUpperCase()}–{fixture.away_team.slice(0, 3).toUpperCase()}</strong><span>{prediction.selection} {pct(prediction.final_calibrated_probability ?? prediction.probability)}</span><b className="movement up">{delta(prediction.market_residual)}</b><span className="ticker-notice">{terminal.live_data_status === "LIVE" ? "TIMESTAMPED PROVIDER DATA" : "DEMO DATA · NOT LIVE"}</span></section>
 
     <section className="match-hero"><div><p className="eyebrow">{fixture.competition} · {fixture.status}</p><h1>{fixture.home_team} <span>vs</span> {fixture.away_team}</h1><p>Kickoff {kickoff}</p></div><div className="score-console"><span>{terminal.live_data_status === "LIVE" ? "LIVE SCORE" : "SCHEDULED"}</span><strong>{terminal.snapshot.score ?? "— – —"}</strong><b>{terminal.snapshot.minute === null ? "AWAITING KICKOFF" : `${terminal.snapshot.minute.toFixed(0)}'`}</b></div></section>
