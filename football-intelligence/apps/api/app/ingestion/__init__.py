@@ -1,0 +1,2 @@
+"""Timestamp-safe ingestion adapters."""
+
