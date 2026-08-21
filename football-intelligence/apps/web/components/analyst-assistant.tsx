@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { type Fixture } from "./upcoming-fixtures";
 
 type Decision = "QUALIFIED" | "WATCH" | "NO_BET";
@@ -81,6 +81,7 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
   const [status, setStatus] = useState("Ready");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [assistantContext, setAssistantContext] = useState<{ last_decimal_odds?: number | null; last_stake_ugx?: number | null }>({});
+  const conversationRef = useRef<HTMLDivElement>(null);
   const fixtureName = `${fixture.home_team} vs ${fixture.away_team}`;
   const latestReply = [...messages].reverse().find((message) => message.role === "analyst")?.reply;
 
@@ -98,6 +99,12 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
     setStatus("Ready");
     setAssistantContext({});
   }, [fixture.id]);
+
+  useEffect(() => {
+    const conversation = conversationRef.current;
+    if (!conversation) return;
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: messages.length > 1 ? "smooth" : "auto" });
+  }, [loading, messages]);
 
   async function ask(nextQuestion: string) {
     const trimmed = nextQuestion.trim();
@@ -131,9 +138,16 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
   const prompts = latestReply?.suggestions?.length ? latestReply.suggestions : starterQuestions;
   return <section className="analyst-assistant" aria-labelledby="analyst-title">
     <div className="assistant-heading"><div><p className="eyebrow">{analystApiUrl ? "PROTECTED AI ANALYST · SERVER TOOLS" : "OFFLINE ANALYST · PROTECTED AI READY"}</p><h2 id="analyst-title">Ask the decision desk.</h2><p>Context: <strong>{fixtureName}</strong>. Facts and money calculations come from server tools; missing live data stays unavailable.</p></div><span className="assistant-mode">{loading ? status.toUpperCase() : latestReply?.provider === "GEMINI" ? "GEMINI GROUNDED" : "DEMO READY"}</span></div>
-    <form className="assistant-form" onSubmit={submit}><label htmlFor="analyst-question">Ask about this match, a manual price, a payout or a decision change</label><div><input id="analyst-question" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} disabled={loading} placeholder="e.g. 10k on the home team at 1.80" /><button type="submit" disabled={loading}>{loading ? status : "Ask analyst"}</button></div></form>
-    <div className="assistant-prompts" aria-label="Suggested questions">{prompts.map((prompt) => <button key={prompt} type="button" disabled={loading} onClick={() => void ask(prompt)}>{prompt}</button>)}</div>
-    {messages.length ? <div className="assistant-thread" aria-live="polite">{messages.map((message) => message.role === "user" ? <p className="assistant-user-message" key={message.id}>{message.text}</p> : <AnswerCard key={message.id} reply={message.reply!} />)}</div> : null}
+    <div className="assistant-conversation">
+      <div className="assistant-thread" ref={conversationRef} role="log" aria-live="polite" aria-relevant="additions text">
+        {messages.length ? messages.map((message) => message.role === "user" ? <p className="assistant-user-message" key={message.id}>{message.text}</p> : <AnswerCard key={message.id} reply={message.reply!} />) : <p className="assistant-empty">Start a conversation about this fixture. Your replies will stay here while you ask follow-up questions.</p>}
+        {loading ? <p className="assistant-thinking" role="status"><span />{status}</p> : null}
+      </div>
+      <div className="assistant-composer">
+        <div className="assistant-prompts" aria-label="Suggested questions">{prompts.map((prompt) => <button key={prompt} type="button" disabled={loading} onClick={() => void ask(prompt)}>{prompt}</button>)}</div>
+        <form className="assistant-form" onSubmit={submit}><label htmlFor="analyst-question">Ask about this match, a manual price, a payout or a decision change</label><div><input id="analyst-question" value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={800} disabled={loading} placeholder="e.g. 10k on the home team at 1.80" /><button type="submit" disabled={loading}>{loading ? status : "Ask analyst"}</button></div></form>
+      </div>
+    </div>
   </section>;
 }
 
