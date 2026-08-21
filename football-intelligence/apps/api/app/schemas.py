@@ -68,3 +68,37 @@ class OfferEvaluation(BaseModel):
     fair_odds: float
     suggested_max_stake_ugx: float
     disclaimer: str
+
+
+class AssistantQueryRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=800)
+    fixture_id: str = "demo-ars-che"
+    weekly_bankroll_ugx: float = Field(default=100_000, ge=0, le=10_000_000_000)
+
+
+class AssistantCalculation(BaseModel):
+    decimal_odds: float | None = None
+    stake_ugx: float | None = None
+    gross_return_ugx: float | None = None
+    gross_profit_ugx: float | None = None
+    estimated_tax_ugx: float | None = None
+    potential_net_return_ugx: float | None = None
+    potential_net_profit_ugx: float | None = None
+    conservative_expected_net_return_ugx: float | None = None
+    conservative_expected_net_profit_ugx: float | None = None
+    net_expected_value_percent: float | None = None
+    conservative_net_expected_value_percent: float | None = None
+    minimum_acceptable_odds: float | None = None
+    suggested_max_stake_ugx: float | None = None
+
+
+class AssistantResponse(BaseModel):
+    mode: Literal["DEMO", "LIVE"]
+    data_status: Literal["DEMO_ONLY", "LIVE_UNAVAILABLE", "CURRENT"]
+    answer: str
+    facts: list[str]
+    decision: Literal["QUALIFIED", "WATCH", "NO_BET"] | None = None
+    reasons: list[str]
+    calculation: AssistantCalculation | None = None
+    suggestions: list[str]
+    disclaimer: str

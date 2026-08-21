@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { AnalystAssistant } from "./analyst-assistant";
 import { InstallApp } from "./install-app";
 import { LiveSparkline } from "./terminal-visuals";
 
@@ -92,6 +93,8 @@ export function Dashboard() {
     </section>
 
     <section className="health-strip" aria-label="Data and model health"><Health label="DATA COMPLETENESS" value={`${fixture.data_health.completeness.toFixed(0)}%`} tone={fixture.data_health.status.toLowerCase()} /><Health label="DATA FRESHNESS" value={`${fixture.data_health.freshness.toFixed(0)}%`} tone={fixture.data_health.status.toLowerCase()} /><Health label="MODEL AGREEMENT" value={`${fixture.prediction.agreement.toFixed(0)}/100`} tone="green" /><Health label="DE-VIG DISPERSION" value={fixture.prediction.devig_method_dispersion === undefined ? "—" : `${(fixture.prediction.devig_method_dispersion * 100).toFixed(2)} pp`} tone="amber" /></section>
+
+    <AnalystAssistant />
 
     <section className="manual-check"><div><p className="eyebrow">MANUAL PRICE CHECK · BETPAWA STAYS MANUAL</p><h2>Does the available price survive tax and uncertainty?</h2><p>Enter a price you can see. Arawee/Mayeku-Sportz never signs in, scrapes, clicks or places a bookmaker wager.</p></div><form onSubmit={evaluate}><label htmlFor="price">Current decimal odds</label><div className="price-input"><input id="price" type="number" inputMode="decimal" min="1.01" step="0.01" value={price} onChange={(event) => setPrice(event.target.value)} required /><button type="submit" disabled={loading}>{loading ? "Checking…" : "Evaluate"}</button></div><small>Calculated with the versioned Uganda 15% net-winnings tax rule in demo mode.</small></form>
       {offer ? <div className="manual-result"><StatePill state={offer.decision} /><Metric label="Gross EV" value={percent(offer.expected_value_percent)} /><Metric label="Net EV" value={percent(offer.net_expected_value_percent)} /><Metric label="Conservative net EV" value={percent(offer.conservative_net_expected_value_percent)} /><Metric label="Minimum odds" value={offer.minimum_acceptable_odds ? offer.minimum_acceptable_odds.toFixed(2) : "—"} /><Metric label="Effective odds" value={offer.effective_odds ? offer.effective_odds.toFixed(2) : "—"} /><span className="manual-price-status">{offer.price_current ? "PRICE CURRENT" : "PRICE NEEDS REFRESH"}</span><p>{offer.disclaimer}</p><small>Suggested capped stake: UGX {ugx.format(offer.suggested_max_stake_ugx)}</small></div> : null}

@@ -9,11 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import sentry_sdk
 
+from app.assistant import answer_question
 from app.demo import demo_fixture
 from app.intelligence import assess_corroboration, demo_evidence
-from app.models.market import price_freshness
-from app.models.quant import evaluate_decision, fractional_kelly
-from app.schemas import DataHealth, FixtureSummary, OfferEvaluation, OfferRequest
+from app.schemas import AssistantQueryRequest, AssistantResponse, DataHealth, FixtureSummary, OfferEvaluation, OfferRequest
+from app.services.offer_evaluation import CONFIGURED_TAX_RATE, TAX_POLICY_LABEL, evaluate_manual_offer
 from app.settings import get_settings
 
 settings = get_settings()
@@ -181,18 +181,14 @@ async def fixture_terminal(fixture_id: str) -> dict:
 @app.post("/api/v1/fixtures/{fixture_id}/evaluate-offer", response_model=OfferEvaluation)
 async def evaluate_offer(fixture_id: str, offer: OfferRequest) -> OfferEvaluation:
     fixture = get_demo_fixture_or_404(fixture_id)
-    prediction = fixture.prediction
-    price_status = price_freshness(offer.observed_at or datetime.now(UTC), ttl_seconds=300)
-    conservative_probability = prediction.conservative_probability or prediction.probability
-    evaluation = evaluate_decision(
-        probability=prediction.final_calibrated_probability or prediction.probability, offered_odds=offer.decimal_odds,
-        reliability=prediction.reliability, agreement=prediction.agreement,
-        completeness=fixture.data_health.completeness, freshness=fixture.data_health.freshness,
-        lineup_certainty=42, uncertainty_width=prediction.uncertainty_high - prediction.uncertainty_low,
-        unresolved_critical_intelligence=False, conservative_probability=conservative_probability,
-        tax_rate=0.15, price_current=price_status.is_current,
+    manual_offer = evaluate_manual_offer(
+        fixture,
+        decimal_odds=offer.decimal_odds,
+        weekly_bankroll_ugx=offer.weekly_bankroll_ugx,
+        fractional_kelly_fraction=offer.fractional_kelly,
+        observed_at=offer.observed_at,
     )
-    stake_fraction = fractional_kelly(conservative_probability, offer.decimal_odds, offer.fractional_kelly)
+    evaluation = manual_offer.decision
     return OfferEvaluation(
         fixture_id=fixture_id, decision=evaluation.state, reasons=list(evaluation.reasons),
         expected_value_percent=round((evaluation.expected_value or 0) * 100, 1),
@@ -200,12 +196,38 @@ async def evaluate_offer(fixture_id: str, offer: OfferRequest) -> OfferEvaluatio
         conservative_net_expected_value_percent=round((evaluation.conservative_net_expected_value or 0) * 100, 1),
         effective_odds=round(evaluation.effective_odds or 0, 3),
         minimum_acceptable_odds=round(evaluation.minimum_acceptable_odds or 0, 3),
-        price_current=price_status.is_current,
-        price_expires_at=price_status.expires_at,
-        tax_rate_percent=15,
+        price_current=manual_offer.price.is_current,
+        price_expires_at=manual_offer.price.expires_at,
+        tax_rate_percent=CONFIGURED_TAX_RATE * 100,
         fair_odds=round(evaluation.fair_odds or 0, 2),
-        suggested_max_stake_ugx=round(offer.weekly_bankroll_ugx * stake_fraction, 0),
-        disclaimer="Demo decision-support calculation only. Uganda's configurable 15% tax is applied to net winnings for this illustration. You place any wager manually; no bookmaker is accessed.",
+        suggested_max_stake_ugx=round(offer.weekly_bankroll_ugx * manual_offer.suggested_stake_fraction, 0),
+        disclaimer=f"Demo decision-support calculation only. The {TAX_POLICY_LABEL} is applied for this illustration. You place any wager manually; no bookmaker is accessed.",
+    )
+
+
+@app.post("/api/v1/assistant/query", response_model=AssistantResponse)
+async def analyst_assistant(query: AssistantQueryRequest) -> AssistantResponse:
+    fixture = get_demo_fixture_or_404(query.fixture_id)
+    result = answer_question(
+        question=query.question,
+        fixture=fixture,
+        weekly_bankroll_ugx=query.weekly_bankroll_ugx,
+    )
+    return AssistantResponse(
+        mode="DEMO",
+        data_status=result.data_status,
+        answer=result.answer,
+        facts=list(result.facts),
+        decision=result.decision,
+        reasons=list(result.reasons),
+        calculation=result.calculation,
+        suggestions=[
+            "Why WATCH?",
+            "Arsenal at 2.20, UGX 10,000",
+            "What is happening live?",
+            "What are the best bets this week?",
+        ],
+        disclaimer="Deterministic demo assistant. It does not use an LLM, access a bookmaker, or present missing live data as fact.",
     )
 
 

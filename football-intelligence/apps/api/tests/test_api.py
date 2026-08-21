@@ -45,3 +45,19 @@ def test_terminal_never_presents_demo_as_live_data() -> None:
     assert payload["mode"] == "DEMO"
     assert payload["live_data_status"] == "UNAVAILABLE"
     assert payload["timeline"] == []
+
+
+def test_deterministic_assistant_is_explicit_about_demo_data() -> None:
+    response = client.post("/api/v1/assistant/query", json={"question": "Arsenal at 2.20, UGX 10,000"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["mode"] == "DEMO"
+    assert payload["data_status"] == "DEMO_ONLY"
+    assert payload["calculation"]["potential_net_return_ugx"] == 20_200
+    assert "LLM" in payload["disclaimer"]
+
+
+def test_assistant_marks_live_requests_as_unavailable() -> None:
+    response = client.post("/api/v1/assistant/query", json={"question": "What is happening live?"})
+    assert response.status_code == 200
+    assert response.json()["data_status"] == "LIVE_UNAVAILABLE"
