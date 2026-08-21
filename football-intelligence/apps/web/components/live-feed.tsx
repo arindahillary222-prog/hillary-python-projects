@@ -62,7 +62,7 @@ export function LiveFeed() {
     window.addEventListener("online", refresh);
     window.addEventListener("offline", markOffline);
     document.addEventListener("visibilitychange", refreshWhenVisible);
-    const intervalId = window.setInterval(refreshWhenVisible, POLL_INTERVAL_MS);
+    const intervalId = window.setInterval(() => void refresh(), POLL_INTERVAL_MS);
     return () => {
       window.removeEventListener("online", refresh);
       window.removeEventListener("offline", markOffline);
