@@ -23,6 +23,34 @@ const scheduledFixtures = {
   "demo-ful-che": { home_team: "Fulham", away_team: "Chelsea", kickoff_at: "2026-08-24T19:00:00Z" },
 };
 
+function canonicalScheduledFixture(fixtureId, fixture) {
+  return {
+    id: fixtureId,
+    competition: "England · schedule preview",
+    home_team: fixture.home_team,
+    away_team: fixture.away_team,
+    kickoff_at: fixture.kickoff_at,
+    status: "SCHEDULED",
+    mode: "DEMO",
+    fixture_identity: {
+      arawee_fixture_id: fixtureId,
+      sportmonks_fixture_id: null,
+      odds_provider_event_id: null,
+      video_provider_fixture_id: null,
+      competition_id: null,
+      home_team_id: null,
+      away_team_id: null,
+      kickoff_at: fixture.kickoff_at,
+    },
+    prediction_status: "DEMO_SCHEDULE_PREVIEW",
+    notice: "This is an explicit schedule-preview fallback. A real fixture must receive provider IDs and a model record before it is treated as live or modelled.",
+  };
+}
+
+function weeklyFixtures() {
+  return Object.entries(scheduledFixtures).map(([fixtureId, fixture]) => canonicalScheduledFixture(fixtureId, fixture));
+}
+
 function isAllowedOrigin(origin) {
   return origin === PUBLIC_ORIGIN || origin === "http://localhost:3000";
 }
@@ -230,9 +258,9 @@ function assistantFixture(fixtureId) {
   const fixture = scheduledFixtures[fixtureId];
   if (!fixture) return null;
   return {
+    ...canonicalScheduledFixture(fixtureId, fixture),
     fixture_id: fixtureId,
     ...fixture,
-    status: "SCHEDULED",
     data_status: "DEMO",
     prediction: {
       market: "1X2",
@@ -384,6 +412,7 @@ export default {
     if (request.method !== "GET") return secureJson({ detail: "Method not allowed." }, 405, origin);
     if (isRateLimited(request)) return secureJson({ detail: "Rate limit exceeded." }, 429, origin);
     if (url.pathname === "/health") return secureJson({ status: "ok", service: "arawee-live-api" }, 200, origin);
+    if (url.pathname === "/api/v1/fixtures") return secureJson({ mode: "DEMO", source: "canonical schedule-preview fallback", fixtures: weeklyFixtures() }, 200, origin);
     if (url.pathname === "/api/v1/live/livescores") return liveScores(request, env, ctx, origin);
     if (url.pathname === "/api/v1/markets/upcoming") return upcomingOdds(request, env, ctx, origin);
     return secureJson({ detail: "Not found." }, 404, origin);

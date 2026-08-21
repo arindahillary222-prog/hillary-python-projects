@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { matchesProviderFixture } from "./fixture-identity";
+import { publicConfig } from "./runtime-config";
 import { type Fixture } from "./upcoming-fixtures";
 
 type Outcome = { name: string; price: number };
@@ -13,15 +15,11 @@ type MarketEvent = {
 };
 type OddsResponse = { checked_at: string; cache_seconds: number; provider: string; events: MarketEvent[]; notice: string };
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = publicConfig.apiUrl;
 const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
-function key(value: string) {
-  return value.toLocaleLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
 function findMarketEvent(fixture: Fixture, events: MarketEvent[]) {
-  return events.find((event) => key(event.home_team) === key(fixture.home_team) && key(event.away_team) === key(fixture.away_team));
+  return events.find((event) => matchesProviderFixture(fixture.identity, "odds_provider_event_id", event.event_id));
 }
 
 function checkedTime(value: string | undefined) {
@@ -64,6 +62,6 @@ export function OddsBoard({ fixtures }: { fixtures: Fixture[] }) {
     <div className="odds-heading"><div><p className="eyebrow">UPCOMING MARKETS · DECIMAL ODDS</p><h2 id="odds-title">Current bookmaker prices.</h2><p>1X2 shows the home win, draw, and away win price. Prices are informational only: check them again at your own bookmaker before acting.</p></div><div><span className={`market-status ${status.toLowerCase()}`}>{status}</span><button type="button" onClick={() => void refresh()} disabled={refreshing}>{refreshing ? "Refreshing…" : "Refresh prices"}</button></div></div>
     {status === "LIVE" && feed ? <p className="odds-note">Source: {feed.provider} · Checked {checkedTime(feed.checked_at)} · Refreshes every {Math.round(feed.cache_seconds / 60)} minutes. {feed.notice}</p> : null}
     {status === "UNAVAILABLE" ? <div className="odds-unavailable">Live odds are not connected yet, so no prices are shown. Use the manual price check only with a price you can currently see at your own bookmaker.</div> : null}
-    <div className="odds-grid">{fixtures.map((fixture) => { const event = eventMap.get(fixture.id); const bookmaker = event?.bookmaker; return <article className="odds-card" key={fixture.id}><p>{fixture.home_team} vs {fixture.away_team}</p>{bookmaker ? <><span className="bookmaker-name">{bookmaker.name} · 1X2</span><div className="odds-outcomes">{bookmaker.outcomes.map((outcome) => <div key={outcome.name}><span>{outcome.name === fixture.home_team ? "Home" : outcome.name === fixture.away_team ? "Away" : outcome.name}</span><strong>{outcome.price.toFixed(2)}</strong></div>)}</div></> : <div className="odds-pending">No current provider price for this fixture.</div>}<small>No automatic betting or stake recommendation.</small></article>; })}</div>
+    <div className="odds-grid">{fixtures.map((fixture) => { const event = eventMap.get(fixture.id); const bookmaker = event?.bookmaker; return <article className="odds-card" key={fixture.id}><p>{fixture.home_team} vs {fixture.away_team}</p>{bookmaker ? <><span className="bookmaker-name">{bookmaker.name} · 1X2</span><div className="odds-outcomes">{bookmaker.outcomes.map((outcome) => <div key={outcome.name}><span>{outcome.name === fixture.home_team ? "Home" : outcome.name === fixture.away_team ? "Away" : outcome.name}</span><strong>{outcome.price.toFixed(2)}</strong></div>)}</div></> : <div className="odds-pending">{fixture.identity.odds_provider_event_id ? "No current provider price for this fixture." : "Canonical odds-provider mapping pending; no name-only match is used."}</div>}<small>No automatic betting or stake recommendation.</small></article>; })}</div>
   </section>;
 }

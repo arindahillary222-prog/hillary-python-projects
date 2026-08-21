@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { publicConfig } from "./runtime-config";
 import { type Fixture } from "./upcoming-fixtures";
 
 type Decision = "QUALIFIED" | "WATCH" | "NO_BET";
@@ -22,7 +23,7 @@ type ChatMessage = { id: string; role: "user" | "analyst"; text: string; reply?:
 
 const ugx = new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 });
 const starterQuestions = ["Analyse this match", "What odds should I accept?", "Home team at 2.20, UGX 10,000", "Why did probability change?"];
-const analystApiUrl = process.env.NEXT_PUBLIC_ANALYST_API_URL?.replace(/\/$/, "") || process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+const analystApiUrl = publicConfig.apiUrl;
 
 function localReply(question: string, fixtureName: string): AssistantReply {
   const input = question.trim();
@@ -74,7 +75,7 @@ async function requestAnalyst(payload: Record<string, unknown>, onStatus: (value
   throw new Error("Analyst response ended early.");
 }
 
-export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
+export function AnalystAssistant({ fixture, currentPage = "decision_desk", selectedChart, recordedBetId, liveScore }: { fixture: Fixture; currentPage?: string; selectedChart?: string; recordedBetId?: string | null; liveScore?: string | null }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -116,7 +117,7 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
     setStatus("Checking evidence…");
     let reply: AssistantReply;
     try {
-      reply = await requestAnalyst({ question: trimmed, fixture_id: fixture.id, weekly_bankroll_ugx: 100000, conversation_id: conversationId, current_page: "decision_desk", selected_market: fixture.prediction.market, context: assistantContext }, setStatus);
+      reply = await requestAnalyst({ question: trimmed, fixture_id: fixture.id, weekly_bankroll_ugx: 100000, conversation_id: conversationId, current_page: currentPage, selected_market: fixture.prediction.market, selected_chart: selectedChart, recorded_bet_id: recordedBetId, live_score: liveScore, context: assistantContext }, setStatus);
       if (reply.conversation_id) {
         window.sessionStorage.setItem("ams-analyst-conversation-v1", reply.conversation_id);
         setConversationId(reply.conversation_id);

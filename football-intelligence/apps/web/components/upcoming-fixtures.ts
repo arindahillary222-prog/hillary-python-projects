@@ -1,3 +1,5 @@
+import { type FixtureIdentity } from "./fixture-identity";
+
 export type Decision = "QUALIFIED" | "WATCH" | "NO_BET";
 
 export type Fixture = {
@@ -9,6 +11,7 @@ export type Fixture = {
   venue: string;
   status: string;
   demo: boolean;
+  identity: FixtureIdentity;
   data_health: { status: "GREEN" | "AMBER" | "RED"; completeness: number; freshness: number; source: string; updated_at: string };
   prediction: {
     market: string;
@@ -50,6 +53,10 @@ export const upcomingFixtures: Fixture[] = schedule.map((fixture) => ({
   competition: "England · upcoming schedule",
   status: "SCHEDULED",
   demo: true,
+  identity: {
+    arawee_fixture_id: fixture.id,
+    kickoff_at: fixture.kickoff_at,
+  },
   data_health: {
     status: "AMBER",
     completeness: 72,

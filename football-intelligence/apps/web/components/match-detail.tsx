@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AnalystAssistant } from "./analyst-assistant";
+import { BetTracker } from "./bet-tracker";
 import { InstallApp } from "./install-app";
+import { LiveMatchPlayer } from "./live-match-player";
+import { useFixtureLiveState } from "./live-match-state";
+import { videoSourceForFixture } from "./live-video-provider";
 import { ProbabilityChart } from "./terminal-visuals";
 import { fixtureById } from "./upcoming-fixtures";
 
-const tabs = ["Terminal", "Overview", "Intelligence", "Advanced", "History"] as const;
+const tabs = ["Watch", "Terminal", "Overview", "Intelligence", "Advanced", "History"] as const;
 const chartModes = ["Probability", "Market edge", "Odds", "xG", "Momentum", "Reliability", "Model vs market"] as const;
 type Tab = (typeof tabs)[number];
 type ChartMode = (typeof chartModes)[number];
@@ -36,23 +41,35 @@ export function MatchDetail({ fixtureId }: { fixtureId: string }) {
   const [tab, setTab] = useState<Tab>("Terminal");
   const [chartMode, setChartMode] = useState<ChartMode>("Probability");
   const [detail, setDetail] = useState<Detail>(() => fallbackDetail(fixtureId));
+  const [recordedBetId, setRecordedBetId] = useState<string | null>(null);
 
   useEffect(() => {
     setDetail(fallbackDetail(fixtureId));
+    setRecordedBetId(null);
+  }, [fixtureId]);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("view") === "watch") setTab("Watch");
   }, [fixtureId]);
 
   const { fixture, lineup, intelligence, history, terminal } = detail;
+  const selectedFixture = fixtureById(fixtureId);
+  const videoSource = useMemo(() => videoSourceForFixture(selectedFixture), [selectedFixture]);
+  const fixtureLive = useFixtureLiveState(selectedFixture);
   const prediction = fixture.prediction;
+  const liveScore = fixtureLive.update && fixtureLive.update.home_score !== null && fixtureLive.update.home_score !== undefined && fixtureLive.update.away_score !== null && fixtureLive.update.away_score !== undefined ? `${fixtureLive.update.home_score}–${fixtureLive.update.away_score}` : terminal.snapshot.score;
   const points = useMemo(() => terminal.timeline.length ? terminal.timeline.map((point) => ({ value: point.probability * 100, label: new Date(point.at).toLocaleTimeString() })) : history.history.map((item) => ({ value: item.probability * 100, label: new Date(item.at).toLocaleString() })), [terminal.timeline, history.history]);
   const kickoff = useMemo(() => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin", timeZoneName: "short" }).format(new Date(fixture.kickoff_at)), [fixture.kickoff_at]);
 
   return <main className="terminal-shell match-terminal">
-    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><InstallApp /><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">SCHEDULE</span></div></header>
-    <section className="market-ticker detail-ticker"><span className="ticker-score">{terminal.live_data_status === "LIVE" ? "LIVE" : "PRE"}</span><strong>{fixture.home_team.slice(0, 3).toUpperCase()}–{fixture.away_team.slice(0, 3).toUpperCase()}</strong><span>{prediction.selection} {pct(prediction.final_calibrated_probability ?? prediction.probability)}</span><b className="movement up">{delta(prediction.market_residual)}</b><span className="ticker-notice">{terminal.live_data_status === "LIVE" ? "TIMESTAMPED PROVIDER DATA" : "DEMO DATA · NOT LIVE"}</span></section>
+    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><InstallApp /><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">{fixtureLive.dataStatus}</span></div></header>
+    <section className="market-ticker detail-ticker"><span className="ticker-score">{fixtureLive.update ? "LIVE" : "PRE"}</span><strong>{fixture.home_team.slice(0, 3).toUpperCase()}–{fixture.away_team.slice(0, 3).toUpperCase()}</strong><span>{prediction.selection} {pct(prediction.final_calibrated_probability ?? prediction.probability)}</span><b className="movement up">{delta(prediction.market_residual)}</b><span className="ticker-notice">{fixtureLive.update ? "TIMESTAMPED PROVIDER DATA" : "DEMO DATA · NOT LIVE"}</span></section>
 
-    <section className="match-hero"><div><p className="eyebrow">{fixture.competition} · {fixture.status}</p><h1>{fixture.home_team} <span>vs</span> {fixture.away_team}</h1><p>Kickoff {kickoff}</p></div><div className="score-console"><span>{terminal.live_data_status === "LIVE" ? "LIVE SCORE" : "SCHEDULED"}</span><strong>{terminal.snapshot.score ?? "— – —"}</strong><b>{terminal.snapshot.minute === null ? "AWAITING KICKOFF" : `${terminal.snapshot.minute.toFixed(0)}'`}</b></div></section>
+    <section className="match-hero"><div><p className="eyebrow">{fixture.competition} · {fixture.status}</p><h1>{fixture.home_team} <span>vs</span> {fixture.away_team}</h1><p>Kickoff {kickoff}</p></div><div className="score-console"><span>{fixtureLive.update ? "LIVE SCORE" : "SCHEDULED"}</span><strong>{liveScore ?? "— – —"}</strong><b>{terminal.snapshot.minute === null ? "AWAITING KICKOFF" : `${terminal.snapshot.minute.toFixed(0)}'`}</b></div></section>
     <div className="terminal-warning"><span className="status-dot amber" /><strong>{terminal.live_data_status === "LIVE" ? "LIVE CONNECTION" : "DEMO DATA — LIVE PROVIDER UNAVAILABLE"}</strong><p>{terminal.notice}</p></div>
     <nav className="terminal-tabs" aria-label="Match detail sections">{tabs.map((item) => <button className={item === tab ? "active" : ""} key={item} type="button" onClick={() => setTab(item)}>{item}</button>)}</nav>
+
+    {tab === "Watch" ? <section className="watch-terminal"><p className="watch-data-status">{fixtureLive.dataStatus} · {fixtureLive.update ? `${liveScore} · provider event context available` : "No canonical live-provider mapping for this fixture yet."}</p><div className="watch-primary"><LiveMatchPlayer source={videoSource} /><aside className="probability-panel"><p className="eyebrow">CURRENT MODEL STATE</p><ProbabilityRow label="Football model" value={pct(terminal.snapshot.football_model_probability)} /><ProbabilityRow label="Market benchmark" value={pct(terminal.snapshot.market_probability)} /><ProbabilityRow label="Final calibrated" value={pct(terminal.snapshot.final_calibrated_probability)} strong /><ProbabilityRow label="Conservative" value={pct(terminal.snapshot.conservative_probability)} /><ProbabilityRow label="Reliability" value={`${terminal.snapshot.reliability.toFixed(0)}/100`} /><div className="edge-callout"><span>MODEL–MARKET EDGE</span><strong className="movement up">{delta(terminal.snapshot.market_residual)}</strong></div></aside></div><div className="chart-controls" aria-label="Watch chart mode">{chartModes.map((mode) => <button key={mode} type="button" className={mode === chartMode ? "active" : ""} onClick={() => setChartMode(mode)}>{mode}</button>)}</div><ProbabilityChart points={chartMode === "Probability" ? points : []} mode={chartMode} headline={chartMode === "Probability" ? `${prediction.selection} probability` : `${chartMode} history`} /><section className="watch-data-grid"><article className="match-odds-panel"><p className="eyebrow">CURRENT MARKET</p><h2>ODDS UNAVAILABLE</h2><p>Observed bookmaker prices are shown only after a canonical odds-provider event mapping is supplied.</p><span>Model minimum acceptable odds: {selectedFixture.demo ? prediction.fair_odds.toFixed(2) : "MODEL PENDING"}</span></article><article className="stats-box"><p className="eyebrow">LIVE STATISTICS</p><h2>{terminal.statistics ? "Provider statistics" : "DATA OFFLINE"}</h2><p>Supported xG, shots, possession, cards and chances will appear only from timestamped provider data.</p></article></section><section className="watch-bottom-grid"><BetTracker fixture={selectedFixture} onRecorded={setRecordedBetId} /><AnalystAssistant fixture={selectedFixture} currentPage="match_watch" selectedChart={chartMode} recordedBetId={recordedBetId} liveScore={liveScore} /></section></section> : null}
 
     {tab === "Terminal" ? <section className="live-layout"><div className="terminal-chart-wrap"><div className="chart-controls" aria-label="Chart mode">{chartModes.map((mode) => <button key={mode} type="button" className={mode === chartMode ? "active" : ""} onClick={() => setChartMode(mode)}>{mode}</button>)}</div><ProbabilityChart points={chartMode === "Probability" ? points : []} mode={chartMode} headline={chartMode === "Probability" ? `${prediction.selection} probability` : `${chartMode} history`} /></div><aside className="probability-panel"><p className="eyebrow">CURRENT MODEL STATE</p><ProbabilityRow label="Football model" value={pct(terminal.snapshot.football_model_probability)} /><ProbabilityRow label="Market benchmark" value={pct(terminal.snapshot.market_probability)} /><ProbabilityRow label="Final calibrated" value={pct(terminal.snapshot.final_calibrated_probability)} strong /><ProbabilityRow label="Conservative" value={pct(terminal.snapshot.conservative_probability)} /><ProbabilityRow label="Reliability" value={`${terminal.snapshot.reliability.toFixed(0)}/100`} /><div className="edge-callout"><span>MODEL–MARKET EDGE</span><strong className="movement up">{delta(terminal.snapshot.market_residual)}</strong></div></aside></section> : null}
 
