@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     sportmonks_token: SecretStr | None = None
     api_football_key: SecretStr | None = None
+    rapidapi_key: SecretStr | None = None
     the_odds_api_key: SecretStr | None = None
     weather_api_key: SecretStr | None = None
     sentry_dsn: SecretStr | None = None

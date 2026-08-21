@@ -35,3 +35,20 @@ class ApiFootballProvider(HttpProvider):
         injuries = await self.get_json("injuries", params={"fixture": fixture_id})
         return {"fixture": fixture, "lineups": lineups, "injuries": injuries}
 
+
+class RapidApiFootballProvider(ApiFootballProvider):
+    """API-Football v3 consumed through RapidAPI's authenticated proxy."""
+
+    provider_name = "api_football_rapidapi"
+
+    def __init__(self, rapidapi_key: str) -> None:
+        if not rapidapi_key:
+            raise ProviderError("RapidAPI key is not configured.")
+        HttpProvider.__init__(
+            self,
+            "https://api-football-v1.p.rapidapi.com/v3",
+            {
+                "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+                "x-rapidapi-key": rapidapi_key,
+            },
+        )
