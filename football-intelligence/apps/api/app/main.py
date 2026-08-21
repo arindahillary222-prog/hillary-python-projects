@@ -12,7 +12,10 @@ import sentry_sdk
 from app.assistant import answer_question
 from app.demo import demo_fixture
 from app.intelligence import assess_corroboration, demo_evidence
-from app.schemas import AssistantQueryRequest, AssistantResponse, DataHealth, FixtureSummary, OfferEvaluation, OfferRequest
+from app.providers.base import ProviderError
+from app.providers.sportmonks import SportmonksProvider
+from app.schemas import AssistantQueryRequest, AssistantResponse, DataHealth, FixtureSummary, LiveScoreResponse, OfferEvaluation, OfferRequest
+from app.services.live_scores import LIVE_SCORE_CACHE_SECONDS, SportmonksLiveFeed
 from app.services.offer_evaluation import CONFIGURED_TAX_RATE, TAX_POLICY_LABEL, evaluate_manual_offer
 from app.settings import get_settings
 
@@ -34,6 +37,7 @@ app.add_middleware(
 )
 
 _requests: dict[str, deque[float]] = defaultdict(deque)
+_live_feed: SportmonksLiveFeed | None = None
 
 
 @app.middleware("http")
@@ -68,9 +72,49 @@ def get_demo_fixture_or_404(fixture_id: str) -> FixtureSummary:
     return fixture
 
 
+def get_live_feed() -> SportmonksLiveFeed:
+    """Create the only Sportmonks client server-side, after configuration is present."""
+    global _live_feed
+    if _live_feed is None:
+        token = settings.sportmonks_token
+        if token is None or not token.get_secret_value().strip():
+            raise HTTPException(status_code=503, detail="Live scores are not configured.")
+        _live_feed = SportmonksLiveFeed(SportmonksProvider(token.get_secret_value()))
+    return _live_feed
+
+
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok", "mode": "demo", "time": datetime.now(UTC).isoformat()}
+
+
+@app.get("/api/v1/live/livescores", response_model=LiveScoreResponse)
+async def live_livescores() -> LiveScoreResponse:
+    """Return validated live changes; tokens and raw provider payloads never reach clients."""
+    try:
+        snapshot = await get_live_feed().latest()
+    except ProviderError:
+        raise HTTPException(status_code=503, detail="Live scores are temporarily unavailable.") from None
+    return LiveScoreResponse(
+        mode="LIVE",
+        provider="sportmonks",
+        data_status="CURRENT",
+        checked_at=snapshot.checked_at,
+        cache_seconds=LIVE_SCORE_CACHE_SECONDS,
+        updates=[
+            {
+                "fixture_id": update.fixture_id,
+                "name": update.name,
+                "state_id": update.state_id,
+                "starting_at": update.starting_at,
+                "last_processed_at": update.last_processed_at,
+                "score_count": update.score_count,
+                "event_count": update.event_count,
+            }
+            for update in snapshot.updates
+        ],
+        notice="Sportmonks latest-update feed. Empty updates means no fixture changed in the provider window; it does not mean no football is being played.",
+    )
 
 
 @app.get("/api/v1/fixtures", response_model=list[FixtureSummary])

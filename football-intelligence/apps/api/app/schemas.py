@@ -102,3 +102,23 @@ class AssistantResponse(BaseModel):
     calculation: AssistantCalculation | None = None
     suggestions: list[str]
     disclaimer: str
+
+
+class LiveScoreUpdate(BaseModel):
+    fixture_id: int
+    name: str
+    state_id: int | None = None
+    starting_at: str | None = None
+    last_processed_at: str | None = None
+    score_count: int = Field(ge=0)
+    event_count: int = Field(ge=0)
+
+
+class LiveScoreResponse(BaseModel):
+    mode: Literal["LIVE"]
+    provider: Literal["sportmonks"]
+    data_status: Literal["CURRENT"]
+    checked_at: datetime
+    cache_seconds: int
+    updates: list[LiveScoreUpdate]
+    notice: str

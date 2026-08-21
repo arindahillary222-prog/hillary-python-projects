@@ -16,7 +16,24 @@ class SportmonksProvider(HttpProvider):
         super().__init__("https://api.sportmonks.com/v3/football", {"Authorization": token})
 
     async def probe(self) -> None:
-        await self.get_json("fixtures", params={"per_page": 1})
+        # `latest` is intentionally cheap and valid even when there are no live games.
+        await self.get_json("livescores/latest")
+
+    async def latest_livescores(self) -> dict:
+        """Return only changes from the latest Sportmonks live-score window."""
+        payload = await self.get_json(
+            "livescores/latest",
+            params={"include": "scores;participants;state"},
+        )
+        return payload if isinstance(payload, dict) else {"data": payload}
+
+    async def inplay_livescores(self) -> dict:
+        """Return the current live fixtures with the match-centre fields we display."""
+        payload = await self.get_json(
+            "livescores/inplay",
+            params={"include": "scores;participants;state;events;lineups;statistics"},
+        )
+        return payload if isinstance(payload, dict) else {"data": payload}
 
     async def fixtures_on(self, fixture_date: date) -> dict:
         # Current v3 documentation: /fixtures/date/{YYYY-MM-DD}; enrich explicitly via include.
@@ -34,4 +51,3 @@ class SportmonksProvider(HttpProvider):
             params={"include": "participants;scores;events;lineups;statistics;expectedLineups;sidelined;xGFixture;weatherReport"},
         )
         return payload if isinstance(payload, dict) else {"data": payload}
-
