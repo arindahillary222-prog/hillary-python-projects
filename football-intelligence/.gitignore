@@ -12,4 +12,5 @@ apps/web/out/
 coverage/
 dist/
 *.log
+workers/live-api/.wrangler/
 supabase/.temp/
