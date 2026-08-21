@@ -16,12 +16,13 @@ type AssistantReply = {
   mode: "DEMO" | "LIVE"; data_status: "DEMO_ONLY" | "LIVE_UNAVAILABLE" | "CURRENT"; answer: string; facts: string[];
   decision?: Decision | null; reasons: string[]; calculation?: Calculation | null; suggestions: string[]; disclaimer: string;
   provider?: "GEMINI" | "DETERMINISTIC"; conversation_id?: string | null; evidence?: Evidence[]; tools_used?: string[];
+  context?: { fixture_id?: string | null; last_decimal_odds?: number | null; last_stake_ugx?: number | null };
 };
 type ChatMessage = { id: string; role: "user" | "analyst"; text: string; reply?: AssistantReply };
 
 const ugx = new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 });
 const starterQuestions = ["Analyse this match", "What odds should I accept?", "Home team at 2.20, UGX 10,000", "Why did probability change?"];
-const analystApiUrl = process.env.NEXT_PUBLIC_ANALYST_API_URL?.replace(/\/$/, "");
+const analystApiUrl = process.env.NEXT_PUBLIC_ANALYST_API_URL?.replace(/\/$/, "") || process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
 function localReply(question: string, fixtureName: string): AssistantReply {
   const input = question.trim();
@@ -79,6 +80,7 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("Ready");
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [assistantContext, setAssistantContext] = useState<{ last_decimal_odds?: number | null; last_stake_ugx?: number | null }>({});
   const fixtureName = `${fixture.home_team} vs ${fixture.away_team}`;
   const latestReply = [...messages].reverse().find((message) => message.role === "analyst")?.reply;
 
@@ -94,6 +96,7 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
     setMessages([]);
     setQuestion("");
     setStatus("Ready");
+    setAssistantContext({});
   }, [fixture.id]);
 
   async function ask(nextQuestion: string) {
@@ -106,11 +109,12 @@ export function AnalystAssistant({ fixture }: { fixture: Fixture }) {
     setStatus("Checking evidence…");
     let reply: AssistantReply;
     try {
-      reply = await requestAnalyst({ question: trimmed, fixture_id: fixture.id, weekly_bankroll_ugx: 100000, conversation_id: conversationId, current_page: "decision_desk", selected_market: fixture.prediction.market }, setStatus);
+      reply = await requestAnalyst({ question: trimmed, fixture_id: fixture.id, weekly_bankroll_ugx: 100000, conversation_id: conversationId, current_page: "decision_desk", selected_market: fixture.prediction.market, context: assistantContext }, setStatus);
       if (reply.conversation_id) {
         window.sessionStorage.setItem("ams-analyst-conversation-v1", reply.conversation_id);
         setConversationId(reply.conversation_id);
       }
+      if (reply.context) setAssistantContext(reply.context);
     } catch {
       reply = localReply(trimmed, fixtureName);
     }
