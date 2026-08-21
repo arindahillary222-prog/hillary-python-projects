@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnalystAssistant } from "./analyst-assistant";
 import { InstallApp } from "./install-app";
+import { LiveFeed } from "./live-feed";
 import { LiveSparkline } from "./terminal-visuals";
 
 type Decision = "QUALIFIED" | "WATCH" | "NO_BET";
@@ -93,6 +94,8 @@ export function Dashboard() {
     </section>
 
     <section className="health-strip" aria-label="Data and model health"><Health label="DATA COMPLETENESS" value={`${fixture.data_health.completeness.toFixed(0)}%`} tone={fixture.data_health.status.toLowerCase()} /><Health label="DATA FRESHNESS" value={`${fixture.data_health.freshness.toFixed(0)}%`} tone={fixture.data_health.status.toLowerCase()} /><Health label="MODEL AGREEMENT" value={`${fixture.prediction.agreement.toFixed(0)}/100`} tone="green" /><Health label="DE-VIG DISPERSION" value={fixture.prediction.devig_method_dispersion === undefined ? "—" : `${(fixture.prediction.devig_method_dispersion * 100).toFixed(2)} pp`} tone="amber" /></section>
+
+    <LiveFeed />
 
     <AnalystAssistant />
 
