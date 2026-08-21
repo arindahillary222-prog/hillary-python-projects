@@ -1,9 +1,10 @@
 import { MatchDetail } from "../../../components/match-detail";
+import { upcomingFixtures } from "../../../components/upcoming-fixtures";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return [{ fixtureId: "demo-ars-che" }];
+  return upcomingFixtures.map((fixture) => ({ fixtureId: fixture.id }));
 }
 
 export default async function FixturePage({ params }: { params: Promise<{ fixtureId: string }> }) {

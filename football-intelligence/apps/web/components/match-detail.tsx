@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { InstallApp } from "./install-app";
 import { ProbabilityChart } from "./terminal-visuals";
+import { fixtureById } from "./upcoming-fixtures";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 const tabs = ["Terminal", "Overview", "Intelligence", "Advanced", "History"] as const;
 const chartModes = ["Probability", "Market edge", "Odds", "xG", "Momentum", "Reliability", "Model vs market"] as const;
 type Tab = (typeof tabs)[number];
@@ -18,13 +18,16 @@ type Detail = {
   terminal: { mode: string; live_data_status: string; connection_status: string; last_updated: string; snapshot: { status: string; score: string | null; minute: number | null; football_model_probability?: number; market_probability?: number; final_calibrated_probability?: number; conservative_probability?: number; reliability: number; market_residual?: number }; timeline: { at: string; probability: number }[]; events: unknown[]; statistics: unknown; notice: string };
 };
 
-const fallback: Detail = {
-  fixture: { competition: "Premier League", home_team: "Arsenal", away_team: "Chelsea", kickoff_at: "2026-08-24T15:00:00Z", status: "SCHEDULED", data_health: { status: "AMBER", completeness: 78, freshness: 86 }, prediction: { market: "1X2", selection: "Arsenal", probability: 0.49, football_model_probability: 0.50, market_probability: 0.47, final_calibrated_probability: 0.49, conservative_probability: 0.40, market_residual: 0.03, devig_method_dispersion: 0.01, fair_odds: 2.04, uncertainty_low: 0.40, uncertainty_high: 0.58, reliability: 70, agreement: 86, decision: "WATCH", reasons: ["WATCH_DATA", "WATCH_LINEUP", "WATCH_PRICE"], model_version: "demo-quant-v0.2" } },
-  lineup: { status: "PREDICTED", certainty: 42, notice: "Connect a structured provider before treating any lineup as confirmed." },
-  intelligence: { notice: "No live news or social provider is configured. Demo evidence cannot change a prediction.", corroboration: "UNCONFIRMED", can_adjust_model: false, items: [] },
-  history: { history: [{ at: "2026-08-21T00:00:00Z", probability: 0.49, decision: "WATCH", reason: "Initial timestamp-safe demo run; no live provider update has occurred." }] },
-  terminal: { mode: "DEMO", live_data_status: "UNAVAILABLE", connection_status: "OFFLINE", last_updated: "2026-08-21T00:00:00Z", snapshot: { status: "SCHEDULED", score: null, minute: null, football_model_probability: 0.50, market_probability: 0.47, final_calibrated_probability: 0.49, conservative_probability: 0.40, reliability: 70, market_residual: 0.03 }, timeline: [], events: [], statistics: null, notice: "No authorised live-score, market, or statistics provider is configured. The terminal will not simulate live movement." },
-};
+function fallbackDetail(fixtureId: string): Detail {
+  const fixture = fixtureById(fixtureId);
+  return {
+    fixture: { competition: fixture.competition, home_team: fixture.home_team, away_team: fixture.away_team, kickoff_at: fixture.kickoff_at, status: fixture.status, data_health: fixture.data_health, prediction: fixture.prediction },
+    lineup: { status: "PREDICTED", certainty: 0, notice: "No confirmed lineup has been supplied for this scheduled fixture." },
+    intelligence: { notice: "No authorised news or social provider is configured. Scheduled fixture data cannot change a prediction.", corroboration: "UNCONFIRMED", can_adjust_model: false, items: [] },
+    history: { history: [{ at: "2026-08-21T00:00:00Z", probability: fixture.prediction.probability, decision: "WATCH", reason: "Schedule loaded; no live provider update has occurred." }] },
+    terminal: { mode: "SCHEDULE", live_data_status: "UNAVAILABLE", connection_status: "SCHEDULE ONLY", last_updated: "2026-08-21T00:00:00Z", snapshot: { status: "SCHEDULED", score: null, minute: null, football_model_probability: fixture.prediction.football_model_probability, market_probability: fixture.prediction.market_probability, final_calibrated_probability: fixture.prediction.final_calibrated_probability, conservative_probability: fixture.prediction.conservative_probability, reliability: fixture.prediction.reliability, market_residual: fixture.prediction.market_residual }, timeline: [], events: [], statistics: null, notice: "This fixture is on the schedule. Live score, market and statistics data will only appear when an authorised provider supplies them." },
+  };
+}
 
 function pct(value: number | undefined) { return value === undefined ? "—" : `${(value * 100).toFixed(1)}%`; }
 function delta(value: number | undefined) { return value === undefined ? "—" : `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)} pp`; }
@@ -32,26 +35,19 @@ function delta(value: number | undefined) { return value === undefined ? "—" :
 export function MatchDetail({ fixtureId }: { fixtureId: string }) {
   const [tab, setTab] = useState<Tab>("Terminal");
   const [chartMode, setChartMode] = useState<ChartMode>("Probability");
-  const [detail, setDetail] = useState<Detail>(fallback);
-  const [connection, setConnection] = useState("DEMO DATA");
+  const [detail, setDetail] = useState<Detail>(() => fallbackDetail(fixtureId));
 
   useEffect(() => {
-    if (!apiUrl) return;
-    const controller = new AbortController();
-    const get = (path: string) => fetch(`${apiUrl}${path}`, { signal: controller.signal }).then((response) => response.ok ? response.json() : Promise.reject(new Error("API unavailable")));
-    Promise.all([get(`/api/v1/fixtures/${fixtureId}`), get(`/api/v1/fixtures/${fixtureId}/lineup`), get(`/api/v1/fixtures/${fixtureId}/intelligence`), get(`/api/v1/fixtures/${fixtureId}/history`), get(`/api/v1/fixtures/${fixtureId}/terminal`)])
-      .then(([fixture, lineup, intelligence, history, terminal]) => { setDetail({ fixture, lineup, intelligence, history, terminal }); setConnection("API CONNECTED"); })
-      .catch(() => undefined);
-    return () => controller.abort();
+    setDetail(fallbackDetail(fixtureId));
   }, [fixtureId]);
 
   const { fixture, lineup, intelligence, history, terminal } = detail;
   const prediction = fixture.prediction;
   const points = useMemo(() => terminal.timeline.length ? terminal.timeline.map((point) => ({ value: point.probability * 100, label: new Date(point.at).toLocaleTimeString() })) : history.history.map((item) => ({ value: item.probability * 100, label: new Date(item.at).toLocaleString() })), [terminal.timeline, history.history]);
-  const kickoff = useMemo(() => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(fixture.kickoff_at)), [fixture.kickoff_at]);
+  const kickoff = useMemo(() => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin", timeZoneName: "short" }).format(new Date(fixture.kickoff_at)), [fixture.kickoff_at]);
 
   return <main className="terminal-shell match-terminal">
-    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><InstallApp /><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">{connection}</span></div></header>
+    <header className="terminal-topbar"><Link className="terminal-brand" href="/"><span className="brand-mark">AMS</span><span><strong>Arawee/Mayeku-Sportz</strong><small>Live football terminal</small></span></Link><div className="topbar-status"><InstallApp /><Link className="back-link" href="/">← Desk</Link><span className="mode-flag">SCHEDULE</span></div></header>
     <section className="market-ticker detail-ticker"><span className="ticker-score">{terminal.live_data_status === "LIVE" ? "LIVE" : "PRE"}</span><strong>{fixture.home_team.slice(0, 3).toUpperCase()}–{fixture.away_team.slice(0, 3).toUpperCase()}</strong><span>{prediction.selection} {pct(prediction.final_calibrated_probability ?? prediction.probability)}</span><b className="movement up">{delta(prediction.market_residual)}</b><span className="ticker-notice">{terminal.live_data_status === "LIVE" ? "TIMESTAMPED PROVIDER DATA" : "DEMO DATA · NOT LIVE"}</span></section>
 
     <section className="match-hero"><div><p className="eyebrow">{fixture.competition} · {fixture.status}</p><h1>{fixture.home_team} <span>vs</span> {fixture.away_team}</h1><p>Kickoff {kickoff}</p></div><div className="score-console"><span>{terminal.live_data_status === "LIVE" ? "LIVE SCORE" : "SCHEDULED"}</span><strong>{terminal.snapshot.score ?? "— – —"}</strong><b>{terminal.snapshot.minute === null ? "AWAITING KICKOFF" : `${terminal.snapshot.minute.toFixed(0)}'`}</b></div></section>
