@@ -1,5 +1,6 @@
 const PUBLIC_ORIGIN = "https://arawee-mayeku-sportz-hillary.pages.dev";
 const LIVE_CACHE_SECONDS = 30;
+const ODDS_CACHE_SECONDS = 300;
 const WINDOW_SECONDS = 60;
 const MAX_REQUESTS_PER_WINDOW = 30;
 const SPORTMONKS_RETRY_COOLDOWN_MS = 5 * 60 * 1000;
@@ -95,6 +96,63 @@ async function fetchTheSportsDb(checkedAt) {
   return normaliseTheSportsDb(await response.json(), checkedAt);
 }
 
+function normaliseOdds(payload, checkedAt) {
+  const events = Array.isArray(payload) ? payload : [];
+  return {
+    mode: "LIVE",
+    provider: "the-odds-api",
+    data_status: "CURRENT",
+    checked_at: checkedAt,
+    cache_seconds: ODDS_CACHE_SECONDS,
+    events: events
+      .filter((event) => event && typeof event.id === "string" && typeof event.home_team === "string" && typeof event.away_team === "string")
+      .map((event) => {
+        const bookmaker = Array.isArray(event.bookmakers) ? event.bookmakers.find((candidate) => Array.isArray(candidate?.markets)) : null;
+        const market = bookmaker?.markets?.find((candidate) => candidate?.key === "h2h");
+        return {
+          event_id: event.id,
+          home_team: event.home_team,
+          away_team: event.away_team,
+          commence_time: typeof event.commence_time === "string" ? event.commence_time : null,
+          bookmaker: bookmaker && market ? {
+            name: typeof bookmaker.title === "string" ? bookmaker.title : "Bookmaker",
+            updated_at: typeof bookmaker.last_update === "string" ? bookmaker.last_update : null,
+            outcomes: (Array.isArray(market.outcomes) ? market.outcomes : [])
+              .filter((outcome) => outcome && typeof outcome.name === "string" && Number.isFinite(Number(outcome.price)))
+              .map((outcome) => ({ name: outcome.name, price: Number(outcome.price) })),
+          } : null,
+        };
+      }),
+    notice: "Decimal 1X2 odds from a single bookmaker returned by the provider. Verify every price at your own bookmaker before acting; this app does not place wagers or recommend a stake.",
+  };
+}
+
+async function upcomingOdds(request, env, ctx, origin) {
+  if (!env.THE_ODDS_API_KEY) return secureJson({ detail: "Live odds are not configured." }, 503, origin);
+  const cache = caches.default;
+  const cacheKey = new Request(new URL("/__internal/upcoming-odds-v1", request.url).toString());
+  const cached = await cache.match(cacheKey);
+  if (cached) return secureJson(await cached.json(), 200, origin);
+
+  try {
+    const providerUrl = new URL("https://api.the-odds-api.com/v4/sports/soccer_epl/odds/");
+    providerUrl.searchParams.set("apiKey", env.THE_ODDS_API_KEY);
+    providerUrl.searchParams.set("regions", "eu");
+    providerUrl.searchParams.set("markets", "h2h");
+    providerUrl.searchParams.set("oddsFormat", "decimal");
+    const providerResponse = await fetch(providerUrl.toString());
+    if (!providerResponse.ok) throw new Error("Odds provider rejected the request.");
+    const payload = normaliseOdds(await providerResponse.json(), new Date().toISOString());
+    const cacheResponse = new Response(JSON.stringify(payload), {
+      headers: { "content-type": "application/json; charset=utf-8", "cache-control": `max-age=${ODDS_CACHE_SECONDS}` },
+    });
+    ctx.waitUntil(cache.put(cacheKey, cacheResponse));
+    return secureJson(payload, 200, origin);
+  } catch {
+    return secureJson({ detail: "Live odds are temporarily unavailable." }, 503, origin);
+  }
+}
+
 async function liveScores(request, env, ctx, origin) {
   const cache = caches.default;
   const cacheKey = new Request(new URL("/__internal/live-scores-v1", request.url).toString());
@@ -151,6 +209,7 @@ export default {
     if (isRateLimited(request)) return secureJson({ detail: "Rate limit exceeded." }, 429, origin);
     if (url.pathname === "/health") return secureJson({ status: "ok", service: "arawee-live-api" }, 200, origin);
     if (url.pathname === "/api/v1/live/livescores") return liveScores(request, env, ctx, origin);
+    if (url.pathname === "/api/v1/markets/upcoming") return upcomingOdds(request, env, ctx, origin);
     return secureJson({ detail: "Not found." }, 404, origin);
   },
 };

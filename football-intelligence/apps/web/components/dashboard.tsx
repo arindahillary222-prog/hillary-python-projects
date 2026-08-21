@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AnalystAssistant } from "./analyst-assistant";
 import { InstallApp } from "./install-app";
 import { LiveFeed } from "./live-feed";
+import { MatchCalendar } from "./match-calendar";
+import { OddsBoard } from "./odds-board";
 import { LiveSparkline } from "./terminal-visuals";
 import { type Decision, type Fixture, upcomingFixtures } from "./upcoming-fixtures";
 type Offer = {
@@ -81,6 +83,10 @@ export function Dashboard() {
     </section>
 
     <section className="fixture-board" aria-labelledby="fixture-board-title"><div className="fixture-board-heading"><div><p className="eyebrow">SCHEDULE · 22–24 AUGUST</p><h2 id="fixture-board-title">Upcoming matches.</h2><p>Choose a fixture for the desk, save it to your private watchlist, or open its terminal.</p></div><span className="watch-count">{watchingIds.length} WATCHING</span></div><div className="fixture-grid">{upcomingFixtures.map((nextFixture) => { const watching = watchingIds.includes(nextFixture.id); const selected = nextFixture.id === fixture.id; return <article className={`fixture-card ${selected ? "selected" : ""}`} key={nextFixture.id}><div><span>{scheduleTime(nextFixture.kickoff_at, true)}</span><span>{nextFixture.venue}</span></div><h3>{nextFixture.home_team} <small>vs</small> {nextFixture.away_team}</h3><div className="fixture-card-actions"><button className="desk-trigger" type="button" onClick={() => selectFixture(nextFixture)}>{selected ? "ON DESK" : "VIEW DESK"}</button><button className={`watch-trigger ${watching ? "watching" : ""}`} type="button" onClick={() => toggleWatch(nextFixture.id)} aria-pressed={watching}>{watching ? "WATCHING ✓" : "WATCH"}</button><Link href={`/fixtures/${nextFixture.id}`}>Open terminal →</Link></div></article>; })}</div></section>
+
+    <OddsBoard fixtures={upcomingFixtures} />
+
+    <MatchCalendar fixtures={upcomingFixtures} />
 
     <section className="health-strip" aria-label="Data and model health"><Health label="DATA COMPLETENESS" value={`${fixture.data_health.completeness.toFixed(0)}%`} tone={fixture.data_health.status.toLowerCase()} /><Health label="DATA FRESHNESS" value={`${fixture.data_health.freshness.toFixed(0)}%`} tone={fixture.data_health.status.toLowerCase()} /><Health label="MODEL AGREEMENT" value={`${fixture.prediction.agreement.toFixed(0)}/100`} tone="green" /><Health label="DE-VIG DISPERSION" value={fixture.prediction.devig_method_dispersion === undefined ? "—" : `${(fixture.prediction.devig_method_dispersion * 100).toFixed(2)} pp`} tone="amber" /></section>
 
