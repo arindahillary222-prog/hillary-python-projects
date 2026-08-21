@@ -74,6 +74,10 @@ class AssistantQueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=800)
     fixture_id: str = "demo-ars-che"
     weekly_bankroll_ugx: float = Field(default=100_000, ge=0, le=10_000_000_000)
+    conversation_id: str | None = Field(default=None, max_length=128)
+    current_page: str = Field(default="desk", max_length=80)
+    selected_market: str | None = Field(default=None, max_length=80)
+    selected_chart: str | None = Field(default=None, max_length=80)
 
 
 class AssistantCalculation(BaseModel):
@@ -92,6 +96,21 @@ class AssistantCalculation(BaseModel):
     suggested_max_stake_ugx: float | None = None
 
 
+class AssistantEvidence(BaseModel):
+    label: str
+    source: str
+    status: Literal["CURRENT", "DEMO", "UNAVAILABLE"]
+    updated_at: datetime | None = None
+
+
+class AssistantContext(BaseModel):
+    fixture_id: str | None = None
+    selected_market: str | None = None
+    selected_chart: str | None = None
+    last_decimal_odds: float | None = None
+    last_stake_ugx: float | None = None
+
+
 class AssistantResponse(BaseModel):
     mode: Literal["DEMO", "LIVE"]
     data_status: Literal["DEMO_ONLY", "LIVE_UNAVAILABLE", "CURRENT"]
@@ -102,6 +121,11 @@ class AssistantResponse(BaseModel):
     calculation: AssistantCalculation | None = None
     suggestions: list[str]
     disclaimer: str
+    provider: Literal["GEMINI", "DETERMINISTIC"] = "DETERMINISTIC"
+    conversation_id: str | None = None
+    evidence: list[AssistantEvidence] = Field(default_factory=list)
+    context: AssistantContext = Field(default_factory=AssistantContext)
+    tools_used: list[str] = Field(default_factory=list)
 
 
 class LiveScoreUpdate(BaseModel):

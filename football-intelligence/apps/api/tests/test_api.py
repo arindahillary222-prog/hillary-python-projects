@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+import app.main as main
+from app.ai.service import AssistantUnavailable
 from app.main import app
 
 
@@ -47,17 +49,28 @@ def test_terminal_never_presents_demo_as_live_data() -> None:
     assert payload["timeline"] == []
 
 
-def test_deterministic_assistant_is_explicit_about_demo_data() -> None:
+def test_deterministic_assistant_is_explicit_about_demo_data(monkeypatch) -> None:
+    monkeypatch.setattr(main, "get_analyst_service", lambda: (_ for _ in ()).throw(AssistantUnavailable("test fallback")))
     response = client.post("/api/v1/assistant/query", json={"question": "Arsenal at 2.20, UGX 10,000"})
     assert response.status_code == 200
     payload = response.json()
     assert payload["mode"] == "DEMO"
     assert payload["data_status"] == "DEMO_ONLY"
     assert payload["calculation"]["potential_net_return_ugx"] == 20_200
-    assert "LLM" in payload["disclaimer"]
+    assert payload["provider"] == "DETERMINISTIC"
 
 
-def test_assistant_marks_live_requests_as_unavailable() -> None:
+def test_assistant_marks_live_requests_as_unavailable(monkeypatch) -> None:
+    monkeypatch.setattr(main, "get_analyst_service", lambda: (_ for _ in ()).throw(AssistantUnavailable("test fallback")))
     response = client.post("/api/v1/assistant/query", json={"question": "What is happening live?"})
     assert response.status_code == 200
     assert response.json()["data_status"] == "LIVE_UNAVAILABLE"
+
+
+def test_assistant_stream_returns_a_final_event(monkeypatch) -> None:
+    monkeypatch.setattr(main, "get_analyst_service", lambda: (_ for _ in ()).throw(AssistantUnavailable("test fallback")))
+    response = client.post("/api/v1/assistant/query/stream", json={"question": "Why WATCH?"})
+    assert response.status_code == 200
+    assert "event: status" in response.text
+    assert "event: final" in response.text
+    assert '"provider":"DETERMINISTIC"' in response.text

@@ -3,18 +3,22 @@ from __future__ import annotations
 import time
 from collections import defaultdict, deque
 from datetime import UTC, datetime
+import json
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import sentry_sdk
 
 from app.assistant import answer_question
+from app.ai.provider import GeminiProvider
+from app.ai.service import AnalystService, AssistantUnavailable
+from app.ai.tools import ToolContext
 from app.demo import demo_fixture
 from app.intelligence import assess_corroboration, demo_evidence
 from app.providers.base import ProviderError
 from app.providers.sportmonks import SportmonksProvider
-from app.schemas import AssistantQueryRequest, AssistantResponse, DataHealth, FixtureSummary, LiveScoreResponse, OfferEvaluation, OfferRequest
+from app.schemas import AssistantContext, AssistantEvidence, AssistantQueryRequest, AssistantResponse, DataHealth, FixtureSummary, LiveScoreResponse, OfferEvaluation, OfferRequest
 from app.services.live_scores import LIVE_SCORE_CACHE_SECONDS, SportmonksLiveFeed
 from app.services.offer_evaluation import CONFIGURED_TAX_RATE, TAX_POLICY_LABEL, evaluate_manual_offer
 from app.settings import get_settings
@@ -37,7 +41,9 @@ app.add_middleware(
 )
 
 _requests: dict[str, deque[float]] = defaultdict(deque)
+_assistant_requests: dict[str, deque[float]] = defaultdict(deque)
 _live_feed: SportmonksLiveFeed | None = None
+_analyst_service: AnalystService | None = None
 
 
 @app.middleware("http")
@@ -81,6 +87,37 @@ def get_live_feed() -> SportmonksLiveFeed:
             raise HTTPException(status_code=503, detail="Live scores are not configured.")
         _live_feed = SportmonksLiveFeed(SportmonksProvider(token.get_secret_value()))
     return _live_feed
+
+
+def get_analyst_service() -> AnalystService:
+    """Create the Gemini client on the server only after a private key exists."""
+    global _analyst_service
+    if _analyst_service is None:
+        key = settings.gemini_api_key
+        if key is None or not key.get_secret_value().strip():
+            raise AssistantUnavailable("The Gemini analyst is not configured.")
+        _analyst_service = AnalystService(
+            provider=GeminiProvider(
+                api_key=key.get_secret_value(),
+                model=settings.gemini_model,
+                base_url=str(settings.gemini_api_base_url),
+                fallback_model=settings.gemini_fallback_model,
+            ),
+            max_tool_rounds=settings.assistant_max_tool_rounds,
+        )
+    return _analyst_service
+
+
+def enforce_assistant_rate_limit(request: Request) -> None:
+    """Bound public AI usage independently of normal API traffic."""
+    client = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    bucket = _assistant_requests[client]
+    while bucket and bucket[0] < now - 300:
+        bucket.popleft()
+    if len(bucket) >= 24:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Analyst rate limit exceeded. Try again in a few minutes.")
+    bucket.append(now)
 
 
 @app.get("/health")
@@ -249,9 +286,23 @@ async def evaluate_offer(fixture_id: str, offer: OfferRequest) -> OfferEvaluatio
     )
 
 
-@app.post("/api/v1/assistant/query", response_model=AssistantResponse)
-async def analyst_assistant(query: AssistantQueryRequest) -> AssistantResponse:
-    fixture = get_demo_fixture_or_404(query.fixture_id)
+def deterministic_assistant_response(query: AssistantQueryRequest) -> AssistantResponse:
+    try:
+        fixture = get_demo_fixture_or_404(query.fixture_id)
+    except HTTPException:
+        return AssistantResponse(
+            mode="DEMO",
+            data_status="LIVE_UNAVAILABLE",
+            answer="This fixture does not yet have a server-side model record, so the fallback analyst cannot analyse it without inventing data.",
+            facts=["Fixture model record: unavailable.", "Connect a verified fixture, odds and statistics source before requesting an analysis."],
+            decision=None,
+            reasons=[],
+            suggestions=["Analyse the demo match", "What data is missing?"],
+            disclaimer="Deterministic fallback. No fixture data was substituted or invented.",
+            provider="DETERMINISTIC",
+            conversation_id=query.conversation_id,
+            context=AssistantContext(fixture_id=query.fixture_id, selected_market=query.selected_market, selected_chart=query.selected_chart),
+        )
     result = answer_question(
         question=query.question,
         fixture=fixture,
@@ -271,8 +322,84 @@ async def analyst_assistant(query: AssistantQueryRequest) -> AssistantResponse:
             "What is happening live?",
             "What are the best bets this week?",
         ],
-        disclaimer="Deterministic demo assistant. It does not use an LLM, access a bookmaker, or present missing live data as fact.",
+        disclaimer="Deterministic fallback. Gemini was unavailable; no bookmaker is accessed and missing live data is never presented as fact.",
+        provider="DETERMINISTIC",
+        conversation_id=query.conversation_id,
+        context=AssistantContext(fixture_id=query.fixture_id, selected_market=query.selected_market, selected_chart=query.selected_chart),
     )
+
+
+async def build_analyst_response(query: AssistantQueryRequest) -> AssistantResponse:
+    try:
+        result = await get_analyst_service().answer(
+            question=query.question,
+            request_context=ToolContext(
+                fixture_id=query.fixture_id,
+                weekly_bankroll_ugx=query.weekly_bankroll_ugx,
+                selected_market=query.selected_market,
+                selected_chart=query.selected_chart,
+            ),
+            conversation_id=query.conversation_id,
+        )
+    except AssistantUnavailable:
+        return deterministic_assistant_response(query)
+    evidence = [
+        AssistantEvidence(
+            label=item["label"], source=item["source"], status=item["status"],
+            updated_at=datetime.fromisoformat(item["updated_at"]) if item.get("updated_at") else None,
+        )
+        for item in result.evidence
+    ]
+    return AssistantResponse(
+        mode="DEMO",
+        data_status="DEMO_ONLY",
+        answer=result.answer,
+        facts=list(result.facts),
+        decision=result.decision,
+        reasons=list(result.reasons),
+        calculation=result.calculation,
+        suggestions=[
+            "Analyse this match",
+            "What odds should I accept?",
+            "Home team at 2.20, UGX 10,000",
+            "Why did probability change?",
+        ],
+        disclaimer=("Gemini explains only data retrieved through Arawee/Mayeku-Sportz server tools. Demo data is not live advice; no outcome is guaranteed." if result.llm_used else "Deterministic calculation from Arawee/Mayeku-Sportz server tools. Demo data is not live advice; no outcome is guaranteed."),
+        provider="GEMINI" if result.llm_used else "DETERMINISTIC",
+        conversation_id=result.conversation_id,
+        evidence=evidence,
+        tools_used=list(result.tools_used),
+        context=AssistantContext(
+            fixture_id=result.context.fixture_id,
+            selected_market=result.context.selected_market,
+            selected_chart=result.context.selected_chart,
+            last_decimal_odds=result.context.last_decimal_odds,
+            last_stake_ugx=result.context.last_stake_ugx,
+        ),
+    )
+
+
+@app.post("/api/v1/assistant/query", response_model=AssistantResponse)
+async def analyst_assistant(query: AssistantQueryRequest, request: Request) -> AssistantResponse:
+    enforce_assistant_rate_limit(request)
+    return await build_analyst_response(query)
+
+
+@app.post("/api/v1/assistant/query/stream")
+async def analyst_assistant_stream(query: AssistantQueryRequest, request: Request) -> StreamingResponse:
+    """SSE-compatible response lifecycle for the terminal chat UI.
+
+    Tool execution is intentionally completed server-side before final content is
+    emitted, so partial text can never imply facts which later tool data refutes.
+    """
+    enforce_assistant_rate_limit(request)
+
+    async def events():
+        yield "event: status\ndata: {\"state\":\"retrieving_evidence\"}\n\n"
+        response = await build_analyst_response(query)
+        yield f"event: final\ndata: {json.dumps(response.model_dump(mode='json'), separators=(',', ':'))}\n\n"
+
+    return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.get("/api/v1/recommendations")
