@@ -1,5 +1,5 @@
 const PUBLIC_ORIGIN = "https://arawee-mayeku-sportz-hillary.pages.dev";
-const LIVE_CACHE_SECONDS = 10;
+const LIVE_CACHE_SECONDS = 30;
 const WINDOW_SECONDS = 60;
 const MAX_REQUESTS_PER_WINDOW = 30;
 const SPORTMONKS_RETRY_COOLDOWN_MS = 5 * 60 * 1000;
@@ -46,6 +46,9 @@ function normaliseSportmonks(payload, checkedAt) {
       last_processed_at: typeof item.last_processed_at === "string" ? item.last_processed_at : null,
       score_count: Array.isArray(item.scores) ? item.scores.length : 0,
       event_count: Array.isArray(item.events) ? item.events.length : 0,
+      status: null,
+      home_score: null,
+      away_score: null,
     }));
   return {
     mode: "LIVE",
@@ -76,11 +79,13 @@ function normaliseTheSportsDb(payload, checkedAt) {
         last_processed_at: null,
         score_count: item.intHomeScore !== null || item.intAwayScore !== null ? 2 : 0,
         event_count: 0,
+        home_team: item.strHomeTeam || null,
+        away_team: item.strAwayTeam || null,
         home_score: item.intHomeScore ?? null,
         away_score: item.intAwayScore ?? null,
         status: item.strStatus || null,
       })),
-    notice: "Live score feed supplied by TheSportsDB while the primary provider reconnects.",
+    notice: "Live scores from TheSportsDB while the primary provider reconnects. This source does not provide a verified event-by-event timeline.",
   };
 }
 
