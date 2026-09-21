@@ -1,0 +1,92 @@
+{
+  "members": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "members",
+    "columns": [
+      "id",
+      "user_id",
+      "email",
+      "name",
+      "role",
+      "owner",
+      "active",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "owner",
+        "user_id": "w5RBA7GQ5x59qWsC0nwiR6kFfGakpxzPxls6RtMpF0A9pDq2r9eayb",
+        "email": "arindahillary222@gmail.com",
+        "name": "Hillary Arindamukama",
+        "role": "manager",
+        "owner": 1,
+        "active": 1,
+        "created_at": "2026-09-15T19:48:47.929Z"
+      }
+    ],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": false,
+      "truncated_values": 0,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  },
+  "progress_entries": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "progress_entries",
+    "columns": [
+      "id",
+      "member_id",
+      "task_id",
+      "date",
+      "note",
+      "percent",
+      "created_at"
+    ],
+    "rows": [],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": false,
+      "truncated_values": 0,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  },
+  "tasks": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "tasks",
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "assignee_id",
+      "created_by",
+      "due_date",
+      "status",
+      "progress",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": [],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": false,
+      "truncated_values": 0,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  }
+}

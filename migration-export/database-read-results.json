@@ -1,0 +1,121 @@
+{
+  "members": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "members",
+    "columns": [
+      "id",
+      "user_id",
+      "email",
+      "name",
+      "role",
+      "owner",
+      "active",
+      "created_at"
+    ],
+    "rows": [
+      {
+        "id": "owner",
+        "user_id": "w5RBA7GQ5x59qWsC0nwiR6kFfGakpxzPxls6RtMpF0A9pDq2r9eayb",
+        "email": "arindahillary222@gmail.com",
+        "name": "Hillary Arindamukama",
+        "role": "manager",
+        "owner": 1,
+        "active": 1,
+        "created_at": "2026-09-15T19:48:47.929Z"
+      }
+    ],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": false,
+      "truncated_values": 0,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  },
+  "progress_entries": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "progress_entries",
+    "columns": [
+      "id",
+      "member_id",
+      "task_id",
+      "date",
+      "note",
+      "percent",
+      "created_at"
+    ],
+    "rows": [],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": false,
+      "truncated_values": 0,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  },
+  "tasks": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "tasks",
+    "columns": [
+      "id",
+      "title",
+      "description",
+      "assignee_id",
+      "created_by",
+      "due_date",
+      "status",
+      "progress",
+      "created_at",
+      "updated_at"
+    ],
+    "rows": [],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": false,
+      "truncated_values": 0,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  },
+  "tracker_data": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "binding_name": "DB",
+    "table_name": "tracker_data",
+    "columns": [
+      "member_id",
+      "data",
+      "revision",
+      "updated_at"
+    ],
+    "rows": [
+      {
+        "member_id": "owner",
+        "data": "{\"version\":\"2.0.0\",\"jobs\":[{\"id\":\"painting-ozhan\",\"name\":\"Painting\",\"employerName\":\"Özhan\",\"type\":\"part_time\",\"hourlyWageGross\":14,\"currency\":\"EUR\",\"startDate\":\"\",\"endDate\":\"\",\"weeklyLimitHours\":20,\"yearlyDayLimit\":140,\"hasWorkingTimeAccount\":true,\"notes\":\"\"},{\"id\":\"job-lehrieder-minijob-spuele\",\"name\":\"Spüle / Minijob\",\"employerName\":\"Lehrieder Catering-Party-Service GmbH & Co. KG\",\"type\":\"mini_job\",\"hourlyWageGross\":14,\"currency\":\"EUR\",\"startDate\":\"2026-03-09\",\"endDate\":\"\",\"weeklyLimitHours\":20,\"yearlyDayLimit\":140,\"monthlyPayoutCapGross\":603,\"hasWorkingTimeAccount\":true,\"paymentDayOfFollowingMonth\":10,\"notes\":\"Verified from Lehrieder contract and worked-shift reports. Role: dishwasher/Spüle. Wage EUR 14 gross/hour. Minijob payout cap handled through working-time account.\"}],\"shifts\":[{\"id\":\"2e001181-f0b2-45de-91a8-9908d6037373\",\"jobId\":\"painting-ozhan\",\"date\":\"2026-10-01\",\"start\":\"14:00\",\"end\":\"22:30\",\"breakMinutes\":30,\"workedMinutes\":480,\"wage\":14,\"grossPayExpected\":112,\"workStatus\":\"confirmed\",\"paidStatus\":\"unpaid\",\"paymentStatusConfirmedOn\":\"\",\"location\":\"Fürth\",\"notes\":\"\",\"startedAt\":\"\",\"endedAt\":\"\",\"userEditedAt\":\"2026-09-16T15:25:59.067Z\",\"source\":{\"type\":\"manual\",\"verified\":false}},{\"id\":\"0ce702ea-bce5-44bf-92be-bb21e12f8fa8\",\"jobId\":\"painting-ozhan\",\"date\":\"2026-09-30\",\"start\":\"14:00\",\"end\":\"22:30\",\"breakMinutes\":30,\"workedMinutes\":480,\"wage\":14,\"grossPayExpected\":112,\"workStatus\":\"confirmed\",\"paidStatus\":\"unpaid\",\"paymentStatusConfirmedOn\":\"\",\"location\":\"Fürth\",\"notes\":\"\",\"startedAt\":\"\",\"endedAt\":\"\",\"userEditedAt\":\"2026-09-16T15:25:13.857Z\",\"source\":{\"type\":\"manual\",\"verified\":false}},{\"id\":\"b657ce9f-0775-44bb-a822-1eb6f0d0e8ef\",\"jobId\":\"painting-ozhan\",\"date\":\"2026-09-29\",\"start\":\"14:00\",\"end\":\"22:30\",\"breakMinutes\":30,\"wo… [truncated for model]",
+        "revision": 26,
+        "updated_at": "2026-09-18T15:14:30.115Z"
+      }
+    ],
+    "limit": 25,
+    "offset": 0,
+    "has_more": false,
+    "model_projection": {
+      "truncated": true,
+      "truncated_values": 1,
+      "omitted_columns": 0,
+      "omitted_rows": 0,
+      "next_offset": null
+    }
+  }
+}

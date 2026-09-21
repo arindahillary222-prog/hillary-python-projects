@@ -10,5 +10,5 @@ SITES_AUTH_TRUSTED = "false"
 [[d1_databases]]
 binding = "DB"
 database_name = "work-tracker-reusable"
-database_id = "REPLACE_WITH_NEW_D1_ID"
+database_id = "4df29d03-da4b-4ec9-9c9d-52bd026b0059"
 migrations_dir = "drizzle"

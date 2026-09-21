@@ -1,0 +1,110 @@
+{
+  "exported_at": "2026-09-21T12:19:54.463Z",
+  "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+  "title": "WORK TRACKER Hillary.21",
+  "current_live_url": "https://work-tracker-hillary-21.arindahillary222.chatgpt.site",
+  "latest_version_number": 7,
+  "access_mode": "public",
+  "access_policy": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "access_mode": "public",
+    "allowed_account_user_ids": [
+      "bb089cab-bcce-4ee8-8214-dd632a3a739d"
+    ],
+    "external_visitor_count": 0,
+    "allowed_users": [
+      {
+        "account_user_id": "bb089cab-bcce-4ee8-8214-dd632a3a739d",
+        "email": "arindahillary222@gmail.com",
+        "name": "Arindamukama  Hillary ",
+        "role": "owner"
+      }
+    ],
+    "allowed_groups": [],
+    "allowed_workspace_group_ids": [],
+    "allowed_tenant_group_ids": [],
+    "revision": 4,
+    "updated_at": "2026-09-15T19:48:28.079858+00:00",
+    "allowed_editors": []
+  },
+  "version": {
+    "id": "appgprj_6a9d23424f188191a693f8a469e0e563~appgver_ccd5f09f3bc08191ad77bcf432a0f577",
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "version_number": 7,
+    "source": {
+      "commit_sha": "2710a6f878eea6f02a8631f452dd3dadd528ee04"
+    },
+    "archive_storage": {
+      "archive_format": "tar",
+      "sediment_file_id": "file_0000000021f082108f0f8346aca258a9",
+      "content_hash": "sha256:648244629241d2720b831788108fe7093345ff44af63fd5be9dee94fc842da4b",
+      "size_bytes": 17233920,
+      "file_count": 5
+    },
+    "deployment_id": "appgdep_6aa9a0aca2748191a8343f773068178b"
+  },
+  "environment": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "entries": [],
+    "revision": 0,
+    "updated_at": null
+  },
+  "custom_domains": {
+    "items": [
+      {
+        "id": "appgdom_6aa9ab5cf3348191a475f8cd46b4ab32",
+        "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+        "hostname": "work.hillary21apps.de",
+        "worker_name": "site---6a9d23424f188191a693f8a469e0e563",
+        "status": "pending",
+        "provider_status": "pending",
+        "ssl_status": "pending_validation",
+        "cname_target": "custom-domains.chatgpt.site.",
+        "apex_proxy_ipv4_targets": [
+          "162.159.143.30",
+          "172.66.3.26"
+        ],
+        "validation_records": [
+          {
+            "record_type": "TXT",
+            "name": "_openai-site-verification.work.hillary21apps.de",
+            "value": "openai-site-verification=Cs-7Q0Q1l0FcEXn55oFSCBpa3xPftxyB4QUExCnRcgc"
+          },
+          {
+            "record_type": null,
+            "name": null,
+            "value": null
+          },
+          {
+            "record_type": "TXT",
+            "name": "_cf-custom-hostname.work.hillary21apps.de",
+            "value": "08af0bad-32b2-4fce-a983-c1bb5633c16e"
+          }
+        ],
+        "last_error": null,
+        "created_at": "2026-09-15T20:32:28.950440+00:00",
+        "updated_at": "2026-09-15T21:32:35.356817+00:00"
+      }
+    ]
+  },
+  "database_overview": {
+    "project_id": "appgprj_6a9d23424f188191a693f8a469e0e563",
+    "bindings": [
+      "DB"
+    ],
+    "selected_binding_name": "DB",
+    "tables": [
+      "members",
+      "progress_entries",
+      "tasks",
+      "tracker_data"
+    ],
+    "model_projection": {
+      "truncated": false,
+      "omitted_project_id": false,
+      "omitted_selected_binding": false,
+      "omitted_bindings": 0,
+      "omitted_tables": 0
+    }
+  }
+}
