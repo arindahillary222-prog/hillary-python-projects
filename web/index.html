@@ -1,0 +1,553 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#38bdf8">
+    <meta name="description" content="WORK TRACKER records shifts, pay, payslips, legal work days, and banked hours.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Work Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/logo.svg">
+    <link rel="stylesheet" href="styles.css?v=2.0.0">
+    <title>WORK TRACKER</title>
+  </head>
+  <body><section id="accountLoading" class="account-loading" role="status"><h1>Work Tracker</h1><p id="accountLoadingText">Loading your account…</p><button class="quiet-button" id="reloadAccount" hidden="">Try again</button></section>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary"><button class="brand" type="button" data-route="home"><img src="assets/logo.svg" alt="" width="36" height="36"><span><strong>WORK TRACKER</strong><small>Reusable Edition</small></span></button><nav id="workspaceNav"></nav></aside>
+
+      <div class="main-panel">
+        <header class="topbar"><div class="header-title"><p class="eyebrow">WORK TRACKER</p><h1 id="pageTitle">Dashboard</h1></div><div class="account-badge"><strong id="accountName"></strong><span id="accountRole" class="status-pill"></span></div><button class="quiet-button menu-button" id="openWorkspaceMenu" type="button" aria-label="Open menu">Menu</button></header>
+
+        <div id="saveStatus" class="save-status" role="status" aria-live="polite"></div><main><section class="view" id="view-home"><div id="homeSummary" class="home-summary"></div><div id="homeActions" class="dashboard-actions"></div><section class="panel"><div class="panel-head"><h3>Today</h3><button class="quiet-button small" data-route-jump="tasks">Open tasks</button></div><div id="homeToday"></div></section></section>
+          <section class="view" id="view-dashboard" aria-labelledby="dashboardHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="dashboardHeading" data-i18n="dashboardTitle">Legal, money, study, and permit overview</h2>
+                <p data-i18n="dashboardSub">Know what is safe this week and what needs attention next.</p>
+              </div>
+              <span class="status-pill" id="todayPill"></span>
+            </div>
+            <div class="metric-grid" id="metricGrid"></div>
+            <div class="dashboard-grid">
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="workCompliance">Work compliance</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="work" data-i18n="open">Open</button>
+                </div>
+                <div class="compliance-band" id="weeklyComplianceBand"></div>
+                <div class="progress-list" id="complianceProgress"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="financeSnapshot">Finance snapshot</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="finance" data-i18n="open">Open</button>
+                </div>
+                <div class="donut-wrap">
+                  <div class="donut" id="financeDonut"><span></span></div>
+                  <div id="categoryBreakdown" class="stacked-list"></div>
+                </div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="nextDeadlines">Next deadlines</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="calendar" data-i18n="sync">Sync</button>
+                </div>
+                <div class="deadline-list" id="deadlineList"></div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="permitReadiness">Residence permit readiness</h3>
+                  <button class="quiet-button small" type="button" data-route-jump="permit" data-i18n="open">Open</button>
+                </div>
+                <div class="readiness-block">
+                  <strong id="permitReadinessPercent">0%</strong>
+                  <span id="permitReadinessText"></span>
+                </div>
+                <div class="mini-list" id="missingPermitList"></div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view active" id="view-work" aria-labelledby="workHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="workHeading">My hours</h2>
+
+              </div>
+              <div class="button-row wrap">
+
+                <button class="quiet-button" id="addBonusButton" type="button" hidden="">Add Bonus</button>
+                <button class="quiet-button" id="planPeriodButton" type="button" hidden="">Plan Period</button>
+                <button class="primary-button" id="addShiftButton" type="button" data-i18n="addShift">Add Shift</button>
+              </div>
+            </div>
+            <section class="panel clock-panel">
+              <div class="clock-copy">
+                <p class="eyebrow">Instant time recording</p>
+                <h3>Start or stop your shift</h3>
+                <div class="clock-fields">
+                  <label>
+                    <span>Job</span>
+                    <select id="clockJob"></select>
+                  </label>
+                  <label>
+                    <span>Location (optional)</span>
+                    <input id="clockLocation" type="text" placeholder="e.g. Bistro 8/9">
+                  </label>
+                  <label>
+                    <span>What are you working on? (optional)</span>
+                    <input id="clockNotes" type="text" placeholder="e.g. Painting doors">
+                  </label>
+                </div>
+              </div>
+              <div class="clock-status" id="clockStatus"></div>
+              <button class="primary-button clock-action" id="clockActionButton" type="button">Start shift</button>
+            </section>
+            <div class="metric-grid compact" id="workMetricGrid" hidden=""></div>
+
+
+            <p id="shiftReviewNote" class="review-note" role="status" hidden=""></p>
+
+
+
+            <section class="panel table-panel">
+              <div class="panel-head">
+                <h3 data-i18n="shiftLedger">Shift ledger</h3>
+                <div class="button-row">
+                  <button class="quiet-button small" id="exportShiftsCsv" type="button" data-i18n="exportCsv">Export CSV</button>
+                  <button class="quiet-button small" id="exportShiftsPdf" type="button" data-i18n="exportPdf">Export PDF</button>
+                  <button class="quiet-button small" id="exportShiftsDocx" type="button" title="DOCX export is unavailable in this offline static build." disabled="" data-i18n="exportDocx">Export DOCX</button>
+                  <button class="quiet-button small" id="emailLedgerButton" type="button" data-i18n="emailShare">Email</button>
+                  <button class="quiet-button small" id="whatsAppLedgerButton" type="button" data-i18n="whatsAppShare">WhatsApp</button>
+                </div>
+              </div>
+              <div class="filter-grid">
+                <label>
+                  <span data-i18n="filterJob">Job / employer</span>
+                  <select id="ledgerJobFilter"></select>
+                </label>
+                <label>
+                  <span data-i18n="filterMonth">Month</span>
+                  <input id="ledgerMonthFilter" type="month">
+                </label>
+                <label>
+                  <span data-i18n="dateFrom">Date from</span>
+                  <input id="ledgerDateFrom" type="date">
+                </label>
+                <label>
+                  <span data-i18n="dateTo">Date to</span>
+                  <input id="ledgerDateTo" type="date">
+                </label>
+              </div>
+              <div class="responsive-table">
+                <table class="shift-table">
+                  <thead>
+                    <tr>
+                      <th data-i18n="date">Date</th>
+                      <th data-i18n="job">Job</th>
+                      <th data-i18n="type">Type</th>
+                      <th data-i18n="time">Time</th>
+                      <th data-i18n="break">Break</th>
+                      <th>Hours</th>
+                      <th data-i18n="wage">Wage</th>
+                      <th data-i18n="expectedPay">Expected money</th>
+                      <th>Shift status</th>
+                      <th data-i18n="paidStatus">Paid status</th>
+                      <th data-i18n="actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="shiftRows"></tbody>
+                </table>
+              </div><div id="ledgerPagination" class="pager"></div>
+            </section>
+
+          </section>
+
+          <section class="view" id="view-finance" aria-labelledby="financeHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="financeHeading" data-i18n="financeTitle">Finance and expense tracker</h2>
+                <p data-i18n="financeSub">Log income and expenses in your selected currency with fast categories.</p>
+              </div>
+              <button class="primary-button" id="addMoneyButton" type="button" data-i18n="addTransaction">Add Transaction</button>
+            </div>
+            <div class="quick-chips" id="quickExpenseChips"></div>
+            <div class="metric-grid compact" id="financeMetricGrid"></div>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="payReconciliation">Pay reconciliation</h3>
+                <span class="status-pill" data-i18n="grossNetSeparated">Gross, net, unpaid, bank income separated</span>
+              </div>
+              <div class="stacked-list" id="payReconciliationRows"></div>
+            </section>
+            <section class="panel table-panel">
+              <div class="panel-head">
+                <h3 data-i18n="moneyLedger">Money ledger</h3>
+                <button class="quiet-button small" id="exportMoneyCsv" type="button" data-i18n="exportCsv">Export CSV</button>
+              </div>
+              <div class="responsive-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-i18n="date">Date</th>
+                      <th data-i18n="description">Description</th>
+                      <th data-i18n="category">Category</th>
+                      <th data-i18n="kind">Kind</th>
+                      <th data-i18n="amount">Amount</th>
+                      <th data-i18n="actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="moneyRows"></tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+
+          <section class="view" id="view-scholarships" aria-labelledby="scholarshipHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="scholarshipHeading" data-i18n="scholarshipTitle">Scholarship and academic monitoring</h2>
+                <p data-i18n="scholarshipSub">Track funding, renewal dates, and ECTS progress before there is a problem.</p>
+              </div>
+              <button class="primary-button" id="addScholarshipButton" type="button" data-i18n="addScholarship">Add Scholarship</button>
+            </div>
+            <section class="panel academic-panel">
+              <div>
+                <h3 data-i18n="ectsProgress">ECTS progress</h3>
+                <p data-i18n="ectsSub">Set the target for your program and update completed credits.</p>
+              </div>
+              <div class="account-grid">
+                <label>
+                  <span data-i18n="ectsCompleted">ECTS completed</span>
+                  <input id="ectsCompleted" type="number" min="0" step="1">
+                </label>
+                <label>
+                  <span data-i18n="ectsTarget">ECTS target</span>
+                  <input id="ectsTarget" type="number" min="1" step="1">
+                </label>
+                <div class="account-total">
+                  <span data-i18n="progress">Progress</span>
+                  <strong id="ectsPercent">0%</strong>
+                </div>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="academicDates">Academic dates</h3>
+                <button class="quiet-button small" id="addAcademicDateButton" type="button" data-i18n="addAcademicDate">Add Academic Date</button>
+              </div>
+              <div class="calendar-list" id="academicEventList"></div>
+            </section>
+            <div class="card-grid" id="scholarshipCards"></div>
+          </section>
+
+          <section class="view" id="view-permit" aria-labelledby="permitHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="permitHeading" data-i18n="permitTitle">Residence permit checklist</h2>
+                <p data-i18n="permitSub">Prepare documents, appointment dates, and proof before renewal.</p>
+              </div>
+              <button class="primary-button" id="addPermitItemButton" type="button" data-i18n="addPermitItem">Add Item</button>
+            </div>
+            <section class="panel">
+              <div class="account-grid">
+                <label>
+                  <span data-i18n="appointmentDate">Appointment date</span>
+                  <input id="permitAppointment" type="date">
+                </label>
+                <label>
+                  <span data-i18n="permitExpiry">Permit expiry</span>
+                  <input id="permitExpiry" type="date">
+                </label>
+                <div class="account-total">
+                  <span data-i18n="readiness">Readiness</span>
+                  <strong id="permitReadinessLarge">0%</strong>
+                </div>
+              </div>
+            </section>
+            <div class="checklist" id="permitChecklist"></div>
+          </section>
+
+          <section class="view" id="view-calendar" aria-labelledby="calendarHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="calendarHeading" data-i18n="calendarTitle">Google Calendar sync</h2>
+                <p data-i18n="calendarSub">Add shifts, visa appointments, scholarship deadlines, and academic dates to your phone calendar.</p>
+              </div>
+              <button class="primary-button" id="downloadIcsButton" type="button" data-i18n="downloadIcs">Download Calendar File</button>
+            </div>
+            <section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="calendarEvents">Calendar events</h3>
+                <span class="status-pill" data-i18n="googleReady">Google links ready</span>
+              </div>
+              <div class="calendar-list" id="calendarEvents"></div>
+            </section>
+          </section>
+
+          <section class="view" id="view-ai" aria-labelledby="aiHeading">
+            <div class="section-head">
+              <div>
+                <h2 id="aiHeading" data-i18n="aiTitle">AI Data Assistant</h2>
+                <p data-i18n="aiSub">Ask local questions about your own saved data. No API key is required.</p>
+              </div>
+            </div>
+            <section class="panel">
+              <div class="ai-box" id="aiMessages"></div>
+              <form class="ai-form" id="aiForm">
+                <input id="aiQuestion" type="text" placeholder="Ask about hours, banked time, unpaid gross, jobs, scholarships, or permits">
+                <button class="primary-button" type="submit" data-i18n="ask">Ask</button>
+              </form>
+            </section>
+          </section>
+
+          <section class="view" id="view-settings" aria-labelledby="settingsHeading"><section class="panel preferences-panel"><h3>Appearance</h3><div class="preference-controls"><label class="compact-control">
+              <span data-i18n="language">Language</span>
+              <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Francais</option>
+                <option value="zh">Chinese</option>
+                <option value="sw">Kiswahili</option>
+                <option value="hi">Indian (Hindi)</option>
+                <option value="pt">Portugues</option>
+                <option value="ar">Arabic</option>
+              </select>
+            </label><label class="compact-control">
+              <span data-i18n="theme">Theme</span>
+              <select id="themeSelect">
+                <option value="light" data-i18n="light">Light</option>
+                <option value="dark" data-i18n="dark">Dark</option>
+              </select>
+            </label><button class="quiet-button" id="installButton" type="button" data-i18n="installApp">Install App</button></div></section>
+            <div class="section-head">
+              <div>
+                <h2 id="settingsHeading" data-i18n="settingsTitle">Settings and job wages</h2>
+                <p data-i18n="settingsSub">Set limits, wages, and private data controls.</p>
+              </div>
+              <button class="primary-button" id="addJobButton" type="button" data-i18n="addJob">Add Job</button>
+            </div>
+            <div class="settings-grid">
+              <section class="panel">
+                <h3 data-i18n="complianceSettings">Compliance settings</h3>
+                <div class="form-grid one">
+                  <label>
+                    <span data-i18n="weeklyLimit">Weekly lecture-period limit</span>
+                    <input id="weeklyLimit" type="number" min="1" max="80" step="0.5">
+                  </label>
+                  <label>
+                    <span data-i18n="yearlyDayLimit">Yearly full-day limit</span>
+                    <input id="yearlyDayLimit" type="number" min="1" max="366" step="1">
+                  </label>
+                  <label class="work-tracker-hidden-setting">
+                    <span data-i18n="monthlyBudget">Monthly budget</span>
+                    <input id="monthlyBudget" type="number" min="0" step="10">
+                  </label>
+                  <label>
+                    <span data-i18n="currency">Currency</span>
+                    <input id="currencySetting" type="text" maxlength="3">
+                  </label>
+                  <label class="work-tracker-hidden-setting">
+                    <span data-i18n="countryMode">Country mode</span>
+                    <input id="countryMode" type="text">
+                  </label>
+                </div>
+              </section>
+              <section class="panel">
+                <div class="panel-head">
+                  <h3 data-i18n="jobWages">Jobs and hourly wages</h3>
+                  <span class="status-pill" data-i18n="autoPay">Auto pay enabled</span>
+                </div>
+                <div class="job-list" id="jobList"></div>
+              </section>
+              <section class="panel">
+                <h3 data-i18n="dataControls">Data controls</h3>
+                <div class="button-row wrap">
+                  <button class="quiet-button" id="exportDataButton" type="button" data-i18n="exportData">Export Data</button>
+                  <button class="quiet-button" id="importDataButton" type="button" data-i18n="importData">Import Data</button>
+                  <input class="hidden" id="importDataInput" type="file" accept="application/json">
+                  <button class="danger-button" id="resetDataButton" type="button" data-i18n="resetData">Reset App Data</button>
+                </div>
+                <p class="muted" data-i18n="dataNote">Data stays in this browser unless you export it.</p>
+              </section>
+            </div>
+          </section>
+        <section class="view" id="view-work-calendar"><div class="section-head"><h2>Calendar</h2></div><section class="panel work-calendar-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Work calendar</p>
+                  <h3 id="workCalendarTitle"></h3>
+                </div>
+                <div class="button-row calendar-controls">
+                  <button class="quiet-button small" id="calendarPrevious" type="button" aria-label="Previous month">‹</button>
+                  <button class="quiet-button small" id="calendarToday" type="button">Today</button>
+                  <button class="quiet-button small" id="calendarNext" type="button" aria-label="Next month">›</button>
+                  <button class="primary-button small" id="planPeriodButtonCalendar" type="button">Plan</button>
+                </div>
+              </div>
+              <div class="calendar-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+              <div class="work-calendar-grid" id="workCalendarGrid"></div>
+              <p class="calendar-help">Tap a day to view or edit its shifts.</p>
+            </section><section class="panel calendar-day-panel" id="calendarDayDetails" aria-live="polite"></section></section><section class="view" id="view-reports"><div class="section-head"><h2>Reports</h2></div><section class="panel export-panel">
+              <div class="panel-head">
+                <div>
+                  <p class="eyebrow">Reports</p>
+                  <h3>Export work information</h3>
+                  <p class="panel-note">Choose exactly which period you need.</p>
+                </div>
+                <strong class="export-summary" id="exportRangeSummary"></strong>
+              </div>
+              <div class="export-grid">
+                <label><span>Period</span><select id="exportScope"><option value="day">One day</option><option value="week">One week</option><option value="month" selected="">One month</option><option value="year">One year</option><option value="custom">Custom dates</option></select></label>
+                <label id="exportReferenceWrap"><span>Date inside the period</span><input id="exportReferenceDate" type="date"></label>
+                <label class="export-custom hidden"><span>From</span><input id="exportCustomFrom" type="date"></label>
+                <label class="export-custom hidden"><span>To</span><input id="exportCustomTo" type="date"></label>
+                <label><span>Job</span><select id="exportJob"></select></label>
+                <label><span>File type</span><select id="exportFormat"><option value="pdf">PDF report</option><option value="excel">Excel workbook (.xlsx)</option><option value="csv">CSV spreadsheet</option></select></label>
+                <button class="primary-button export-action" id="exportReportButton" type="button">Export report</button>
+              </div>
+              <p id="exportStatus" class="panel-note" role="status" aria-live="polite"></p>
+              <div id="exportReady" class="button-row wrap" hidden=""></div>
+              <p class="calendar-help">PDF includes a summary, shifts, and bonuses. Excel includes separate Summary, Shifts, and Bonus Payments sheets.</p>
+            </section></section><section class="view" id="view-bonuses"><div class="section-head"><h2>Bonus payments</h2></div><section class="panel table-panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Bonus payments</h3>
+                  <p class="panel-note">Record paid tasks such as sanding doors or covering doors with paper.</p>
+                </div>
+                <button class="primary-button small" id="addBonusButtonPanel" type="button">Add bonus</button>
+              </div>
+              <div class="responsive-table">
+                <table>
+                  <thead>
+                    <tr><th>Date</th><th>Job</th><th>Work completed</th><th>Quantity</th><th>Amount</th><th>Paid status</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody id="bonusRows"></tbody>
+                </table>
+              </div>
+            </section></section><section class="view" id="view-payslips"><div class="section-head"><h2>Payslips</h2><button class="quiet-button" id="addPayslipButton" type="button" data-i18n="addPayslip">Add Payslip</button></div><section class="panel table-panel">
+              <div class="panel-head">
+                <h3 data-i18n="payslipLedger">Payslips</h3>
+                <span class="status-pill" data-i18n="payslipsSeparate">Separate from shifts</span>
+              </div>
+              <div class="responsive-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-i18n="month">Month</th>
+                      <th data-i18n="job">Job</th>
+                      <th data-i18n="paidGross">Paid gross</th>
+                      <th data-i18n="paidNet">Paid net</th>
+                      <th data-i18n="hoursPaid">Hours paid</th>
+                      <th data-i18n="actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payslipRows"></tbody>
+                </table>
+              </div>
+            </section></section><section class="view" id="view-time-account"><div class="section-head"><h2>Time account</h2></div><section class="panel">
+              <div class="panel-head">
+                <h3 data-i18n="workingTimeAccount">Working time account</h3>
+                <span class="status-pill" id="timeAccountStatus"></span>
+              </div>
+              <div class="account-grid">
+                <label>
+                  <span data-i18n="accountJob">Account job</span>
+                  <select id="timeAccountJob"></select>
+                </label>
+                <label>
+                  <span data-i18n="manualCarry">Manual carry-in/out hours</span>
+                  <input id="manualTimeCarry" type="number" step="0.25" inputmode="decimal">
+                </label>
+                <label>
+                  <span data-i18n="compensatedHours">Compensated hours already taken</span>
+                  <input id="compensatedHours" type="number" step="0.25" inputmode="decimal">
+                </label>
+                <label>
+                  <span data-i18n="confirmedBanked">Employer-confirmed banked hours</span>
+                  <input id="confirmedBankedHours" type="number" step="0.25" inputmode="decimal">
+                </label>
+                <div class="account-total">
+                  <span data-i18n="bankedExtra">Banked extra hours</span>
+                  <strong id="bankedExtraHours">0.00 h</strong>
+                </div>
+              </div>
+              <div class="mini-list" id="timeAccountRows"></div>
+            </section></section><section class="view" id="view-tasks"><div id="tasksContent"></div></section><section class="view" id="view-progress"><div id="progressContent"></div></section><section class="view" id="view-team-logs"><div id="team-logsContent"></div></section><section class="view" id="view-team-progress"><div id="team-progressContent"></div></section><section class="view" id="view-people"><div id="peopleContent"></div></section></main>
+      </div>
+    </div>
+
+    <dialog id="entryDialog">
+      <form method="dialog" class="dialog-card" id="entryForm">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow" id="dialogEyebrow"></p>
+            <h2 id="dialogTitle"></h2>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Close">x</button>
+        </div>
+        <div id="dialogFields" class="form-grid"></div>
+        <p id="dialogError" class="dialog-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="quiet-button" value="cancel" type="submit" data-i18n="cancel">Cancel</button>
+          <button class="primary-button" id="dialogSaveButton" value="default" type="submit" data-i18n="save">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="installDialog">
+      <div class="dialog-card">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow" data-i18n="installable">Installable app</p>
+            <h2 data-i18n="installTitle">Install WORK TRACKER</h2>
+          </div>
+          <button class="icon-button" id="closeInstallDialog" type="button" aria-label="Close">x</button>
+        </div>
+        <div class="install-grid">
+          <div>
+            <strong>Android</strong>
+            <p data-i18n="installAndroid">Open in Chrome, tap the browser menu, then choose Install app or Add to Home screen.</p>
+          </div>
+          <div>
+            <strong>iPhone</strong>
+            <p data-i18n="installIphone">Open in Safari, tap Share, then choose Add to Home Screen.</p>
+          </div>
+          <div>
+            <strong>Mac / Windows</strong>
+            <p data-i18n="installLaptop">Open in Chrome or Edge and use the install icon in the address bar or browser menu.</p>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="importPreviewDialog">
+      <div class="dialog-card">
+        <div class="dialog-head">
+          <div>
+            <p class="eyebrow" data-i18n="importPreview">Import preview</p>
+            <h2 data-i18n="reviewImportedData">Review imported data</h2>
+          </div>
+          <button class="icon-button" id="cancelImportPreview" type="button" aria-label="Close">x</button>
+        </div>
+        <div class="stacked-list" id="importPreviewContent"></div>
+        <div class="dialog-actions">
+          <button class="quiet-button" id="rejectImportButton" type="button" data-i18n="cancel">Cancel</button>
+          <button class="primary-button" id="confirmImportButton" type="button" data-i18n="save">Save</button>
+        </div>
+      </div>
+    </dialog>
+
+
+
+    <script src="work-core.js?v=2.0.0" defer=""></script>
+    <script src="vendor/pdf-lib.min.js?v=2.0.0" defer=""></script>
+    <script src="vendor/jszip.min.js?v=2.0.0" defer=""></script>
+    <script src="reporting.js?v=2.0.0" defer=""></script>
+    <script src="payslip-parser.js?v=2.0.0" defer></script><script src="payslip-import.js?v=2.0.0" defer></script><script src="team.js?v=2.0.0" defer=""></script><script src="app.js?v=2.0.0" defer=""></script>
+
+
+<nav class="mobile-nav" aria-label="Quick navigation"><button data-route-jump="home">Home</button><button data-route-jump="work">My hours</button><button data-route-jump="tasks">Tasks</button><button id="mobileMore">Menu</button></nav>
+<dialog id="workspaceMenu"><div class="dialog-card"><div class="panel-head"><h2>Menu</h2><button class="quiet-button small" data-close-menu="">Close</button></div><div id="workspaceMenuItems" class="menu-grid"></div><a href="/logout" class="signout-link">Sign out</a></div></dialog>
+<dialog id="teamDialog"><form id="teamForm" class="dialog-card"><div class="dialog-head"><h2 id="teamDialogTitle"></h2><button type="button" class="quiet-button small" data-close-team="">Close</button></div><div id="teamFields" class="form-grid"></div><p id="teamError" role="alert" class="dialog-error"></p><div class="dialog-actions"><button class="quiet-button" type="button" data-close-team="">Cancel</button><button class="primary-button" id="teamSave" type="submit">Save</button></div></form></dialog></body></html>

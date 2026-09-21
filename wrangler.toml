@@ -1,0 +1,14 @@
+name = "work-tracker-reusable"
+main = "dist/server/index.js"
+compatibility_date = "2026-09-21"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+SITES_AUTH_TRUSTED = "false"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "work-tracker-reusable"
+database_id = "REPLACE_WITH_NEW_D1_ID"
+migrations_dir = "drizzle"

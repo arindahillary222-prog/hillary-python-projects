@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "jobs": [],
+  "shifts": [],
+  "payslips": [],
+  "bonuses": [],
+  "activeShift": null,
+  "workingTimeAccounts": [],
+  "transactions": [],
+  "scholarships": [],
+  "academicEvents": [],
+  "permitItems": [],
+  "settings": {
+    "weeklyLimitHours": 20,
+    "yearlyDayLimit": 140,
+    "monthlyBudget": 0,
+    "currency": "EUR",
+    "appName": "WORK TRACKER",
+    "countryMode": "custom",
+    "locale": "en"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "work-tracker-hillary",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "db:generate": "drizzle-kit generate",
+    "test": "node --test tests/*.test.cjs tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "@tesseract.js-data/deu": "1.0.0",
+    "@tesseract.js-data/eng": "1.0.0",
+    "drizzle-kit": "0.31.8",
+    "drizzle-orm": "0.44.7",
+    "esbuild": "0.25.12",
+    "jsdom": "30.0.1",
+    "pdfjs-dist": "5.4.149",
+    "tesseract.js": "6.0.1"
+  }
+}

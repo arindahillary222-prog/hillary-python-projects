@@ -1,0 +1,34 @@
+{
+  "name": "WORK TRACKER",
+  "short_name": "WORK TRACKER",
+  "description": "A private work tracker for shifts, wages, payslips, legal work days, and banked hours.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f9ff",
+  "theme_color": "#38bdf8",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/maskable-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Work Shift",
+      "short_name": "Shift",
+      "url": "./",
+      "description": "Log working time, breaks, and expected pay."
+    }
+  ]
+}
