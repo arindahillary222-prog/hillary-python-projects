@@ -1244,6 +1244,7 @@ function scoreJobs(jobs, criteria = getCurrentSearchCriteria()) {
       titleAligned: true,
       evidenceCount: 0,
       mandatoryIssues: [],
+      studentFitScore: 0,
       languageRequirement: job.languageRequirement || detectLanguageRequirement(job)
     })).sort((a, b) => JobLogic.compareRank(a, b));
   }
@@ -1251,6 +1252,7 @@ function scoreJobs(jobs, criteria = getCurrentSearchCriteria()) {
   return jobs.map((job) => ({
     ...job,
     ...JobLogic.matchJobToProfile(job, profile),
+    studentFitScore: JobLogic.studentSuitabilityScore(job, profile),
     successRate: null,
     languageRequirement: job.languageRequirement || detectLanguageRequirement(job)
   })).sort((a, b) => JobLogic.compareRank(a, b));
@@ -1503,6 +1505,7 @@ function generateCoachOutput(mode, job = selectedJob) {
   const role = $("#targetRole").value.trim() || job?.title || "target role";
   const company = $("#targetCompany").value.trim() || job?.company || "the company";
   const requirements = $("#targetRequirements").value.trim() || job?.description || "";
+  const profile = cvMemory?.text?.trim() ? JobLogic.extractCvProfile(cvMemory.text) : null;
   const analysis = job ? analyzeJobAgainstCv({ ...job, description: requirements, title: role, company }, { role }) : analyzeJobAgainstCv({
     title: role,
     company,
@@ -1512,7 +1515,7 @@ function generateCoachOutput(mode, job = selectedJob) {
     tags: []
   }, { role });
   const recommendations = buildRecommendationText(role, company, analysis);
-  const cover = buildCoverLetter(role, company, requirements, analysis);
+  const cover = JobLogic.buildGermanCoverLetter({ role, company, analysis, profile });
 
   if (mode === "cover") {
     $("#resumeOutput").value = cover;
@@ -1537,34 +1540,6 @@ function buildRecommendationText(role, company, analysis) {
     "",
     t("matchingEvidence"),
     analysis.strengths?.length ? analysis.strengths.slice(0, 8).map((word) => `- ${word}`).join("\n") : `- ${t("addCvToDetect")}`
-  ].join("\n");
-}
-
-function buildCoverLetter(role, company, requirements, analysis) {
-  const strengths = analysis.strengths?.slice(0, 4).join(", ") || "my relevant experience";
-  const missing = analysis.missing?.slice(0, 3).join(", ");
-  const cvLine = cvMemory?.text
-    ? t("coverCvLine", { strengths })
-    : t("coverNoCvLine");
-  const improvementLine = missing
-    ? t("coverMissingLine", { missing })
-    : t("coverNoMissingLine");
-
-  return [
-    t("coverDraftTitle", { role, company }),
-    "",
-    t("dearHiringTeam"),
-    "",
-    t("coverIntro", { role, company, line: cvLine }),
-    "",
-    t("coverAttraction", { line: improvementLine }),
-    "",
-    t("coverClose"),
-    "",
-    t("kindRegards"),
-    t("yourName"),
-    "",
-    requirements ? t("beforeSending") : t("pasteFullJob")
   ].join("\n");
 }
 

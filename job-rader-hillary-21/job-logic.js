@@ -392,11 +392,65 @@
     return 0;
   }
 
+  function studentSuitabilityScore(job, profile) {
+    if (!profile?.student) return 0;
+    const text = normalizeWords(`${job?.title || ""} ${job?.summary || ""} ${job?.description || ""} ${(job?.tags || []).join(" ")}`);
+    let score = 0;
+    if (/werkstudent|student(?:en)?job|studentische aushilfe|working student|student assistant/.test(text)) score += 5;
+    if (/minijob|mini job|teilzeit|part time|flexible arbeitszeiten|flexible hours/.test(text)) score += 4;
+    if (/quereinstieg|ohne ausbildung|ohne berufserfahrung|keine berufserfahrung|ohne vorkenntnisse|no experience|entry level|entry-level|beginner/.test(text)) score += 4;
+    if (/vollzeit|full time|full-time/.test(text)) score -= 3;
+    const hours = text.match(/\b(\d{1,2})\s*(?:stunden|std|hrs?)\s*(?:pro|\/|per)\s*woche\b|\b(\d{1,2})\s*wochenstunden\b/);
+    const advertisedHours = Number(hours?.[1] || hours?.[2]);
+    const availableHours = Number(profile.hoursPerWeekDuringSemester);
+    if (profile.hoursPerWeekDuringSemester != null && Number.isFinite(advertisedHours) && Number.isFinite(availableHours) && advertisedHours > availableHours) score -= 8;
+    return score;
+  }
+
+  function buildGermanCoverLetter({ role, company, analysis = {}, profile = null }) {
+    const strengthTranslations = {
+      "Customer care / participant support experience": "Kunden- und Gästebetreuung",
+      "Event preparation and on-site support": "Unterstützung bei Veranstaltungen",
+      "Materials and stock organization": "Umgang mit Materialien und Beständen",
+      "Teamwork and coordinated operations": "Teamarbeit und abgestimmte Abläufe",
+      "Reliability and careful work": "Zuverlässigkeit und sorgfältige Arbeitsweise"
+    };
+    const strengths = [...new Set((analysis.strengths || []).map((item) => strengthTranslations[item]).filter(Boolean))];
+    const cvParagraph = !profile
+      ? "Gern erläutere ich Ihnen meine Motivation und die Fähigkeiten, die ich für diese Tätigkeit mitbringe."
+      : strengths.length
+        ? `Für die beschriebenen Aufgaben bringe ich die im Lebenslauf belegten Stärken ${strengths.join(", ")} mit.`
+        : "Meine im Lebenslauf aufgeführten Kenntnisse möchte ich gezielt in die beschriebenen Aufgaben einbringen und mich sorgfältig in die betrieblichen Abläufe einarbeiten.";
+    const availability = profile?.student
+      ? profile.hoursPerWeekDuringSemester != null && Number.isFinite(Number(profile.hoursPerWeekDuringSemester))
+        ? `Während der Vorlesungszeit stehe ich entsprechend meiner angegebenen Verfügbarkeit für bis zu ${Number(profile.hoursPerWeekDuringSemester)} Stunden pro Woche zur Verfügung.`
+        : "Da ich studiere, stimme ich meine Verfügbarkeit mit den Anforderungen meines Studiums ab."
+      : "";
+    return [
+      `Bewerbung als ${String(role || "").trim()} bei ${String(company || "").trim()}`,
+      "",
+      "Sehr geehrte Damen und Herren,",
+      "",
+      `hiermit bewerbe ich mich um die Position als ${String(role || "").trim()} bei ${String(company || "").trim()}. Die beschriebenen Aufgaben sprechen mich an, und ich möchte Ihr Team engagiert unterstützen.`,
+      "",
+      cvParagraph,
+      "Zuverlässigkeit, eine sorgfältige Arbeitsweise und Motivation sind mir wichtig. In neue Aufgaben arbeite ich mich aufmerksam und lernbereit ein.",
+      ...(availability ? [availability] : []),
+      "",
+      "Über die Gelegenheit, mich persönlich vorzustellen, freue ich mich.",
+      "",
+      "Mit freundlichen Grüßen",
+      "Vorname Nachname"
+    ].join("\n");
+  }
+
   function compareRank(a, b, now = Date.now()) {
     const suitabilityDiff = suitabilityBand(b.match) - suitabilityBand(a.match);
     if (suitabilityDiff) return suitabilityDiff;
     const freshnessDiff = freshnessBand(originalPublicationDate(a), now) - freshnessBand(originalPublicationDate(b), now);
     if (freshnessDiff) return freshnessDiff;
+    const studentFitDiff = Number(b.studentFitScore || 0) - Number(a.studentFitScore || 0);
+    if (studentFitDiff) return studentFitDiff;
     const scoreDiff = Number(b.match || 0) - Number(a.match || 0);
     if (scoreDiff) return scoreDiff;
     return new Date(originalPublicationDate(b) || 0) - new Date(originalPublicationDate(a) || 0);
@@ -419,6 +473,8 @@
     isDateEligible,
     freshnessBand,
     suitabilityBand,
+    studentSuitabilityScore,
+    buildGermanCoverLetter,
     compareRank
   });
 });

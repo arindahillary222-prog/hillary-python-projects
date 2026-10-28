@@ -26,7 +26,11 @@ function response(value, status = 200) {
   return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json" } });
 }
 
-function fakeSourceFetch({ arbeitnow = [], remoteOk = [], arbeitsagentur = [], fail = [] } = {}) {
+function textResponse(value, status = 200) {
+  return new Response(value, { status, headers: { "Content-Type": "application/rss+xml" } });
+}
+
+function fakeSourceFetch({ arbeitnow = [], remoteOk = [], jobicy = [], wwrXml = '<rss><channel><item><title>Unmatched: Vacancy</title><link>https://weworkremotely.com/jobs/unmatched</link><pubDate>2026-10-28T09:00:00Z</pubDate></item></channel></rss>', arbeitsagentur = [], fail = [] } = {}) {
   const urls = [];
   const fetch = async (input, options = {}) => {
     const url = new URL(input);
@@ -38,6 +42,14 @@ function fakeSourceFetch({ arbeitnow = [], remoteOk = [], arbeitsagentur = [], f
     if (url.hostname === "remoteok.com") {
       if (fail.includes("Remote OK")) return response({ error: "down" }, 503);
       return response(remoteOk);
+    }
+    if (url.hostname === "jobicy.com") {
+      if (fail.includes("Jobicy")) return response({ error: "down" }, 503);
+      return response({ jobs: jobicy });
+    }
+    if (url.hostname === "weworkremotely.com") {
+      if (fail.includes("We Work Remotely")) return textResponse("source unavailable", 503);
+      return textResponse(wwrXml);
     }
     if (url.hostname === "rest.arbeitsagentur.de" && url.pathname.includes("/pc/v6/jobs")) {
       if (fail.includes("Arbeitsagentur")) return response({ error: "down" }, 503);
@@ -195,13 +207,29 @@ test("partial source failures are surfaced while successful source data is retai
   assert.deepEqual(Object.keys(payload.sourceFailures).sort(), ["Arbeitsagentur", "Remote OK"].sort());
 });
 
+test("merges current Jobicy API and We Work Remotely RSS listings with genuine source links", async () => {
+  const fixture = {
+    jobicy: [{ id: 765, jobTitle: "Servicekraft", companyName: "Jobicy Employer", jobGeo: "Germany", jobType: ["Part-Time"], jobDescription: "Guest service and flexible shifts.", jobExcerpt: "Part-time service work.", pubDate: isoDaysAgo(1), url: "https://jobicy.com/jobs/service-test" }],
+    wwrXml: `<rss><channel><item><title>WWR Employer: Servicekraft</title><link>https://weworkremotely.com/remote-jobs/wwr-service</link><pubDate>${isoDaysAgo(2)}</pubDate><description><![CDATA[Remote service support, part-time.]]></description><country>Germany</country></item></channel></rss>`
+  };
+  const { fetch } = fakeSourceFetch(fixture);
+  const res = await handleJobsRequest(requestFor({ radiusKm: "0" }), { fetch, now: () => NOW });
+  const payload = await res.json();
+  assert.equal(res.status, 200);
+  assert.ok(payload.sources.includes("Jobicy"));
+  assert.ok(payload.sources.includes("We Work Remotely"));
+  assert.ok(payload.jobs.some((job) => job.source === "Jobicy" && job.applyUrl === "https://jobicy.com/jobs/service-test"));
+  assert.ok(payload.jobs.some((job) => job.source === "We Work Remotely" && job.company === "WWR Employer" && job.applyUrl === "https://weworkremotely.com/remote-jobs/wwr-service"));
+  assert.ok(payload.jobs.every((job) => Date.parse(job.publishedAtOriginal) >= Date.parse(isoDaysAgo(14))));
+});
+
 test("all provider failures return an explicit error rather than a successful empty search", async () => {
-  const { fetch } = fakeSourceFetch({ fail: ["Arbeitnow", "Remote OK", "Arbeitsagentur"] });
+  const { fetch } = fakeSourceFetch({ fail: ["Arbeitnow", "Remote OK", "Jobicy", "We Work Remotely", "Arbeitsagentur"] });
   const res = await handleJobsRequest(requestFor(), { fetch, now: () => NOW });
   const payload = await res.json();
   assert.equal(res.status, 502);
   assert.match(payload.error, /all live job sources failed/i);
-  assert.equal(Object.keys(payload.sourceFailures).length, 3);
+  assert.equal(Object.keys(payload.sourceFailures).length, 5);
 });
 
 test("source request timeouts are bounded and reported", async () => {

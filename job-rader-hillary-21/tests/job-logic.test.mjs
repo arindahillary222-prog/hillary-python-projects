@@ -109,6 +109,35 @@ test("mandatory unmet language and licence requirements prevent an 85%+ score", 
   assert.ok(job.missing.some((item) => /German B2 required/i.test(item)));
 });
 
+test("student suitability is a separate ranking signal and penalizes advertised hours above the CV limit", () => {
+  const profile = logic.extractCvProfile(anonymizedCv);
+  const flexibleJob = { title: "Teilzeit Servicekraft", summary: "Flexible Arbeitszeiten für Studierende, Quereinstieg willkommen." };
+  const incompatibleJob = { title: "Servicekraft Vollzeit", summary: "40 Stunden pro Woche." };
+  assert.ok(logic.studentSuitabilityScore(flexibleJob, profile) > logic.studentSuitabilityScore(incompatibleJob, profile));
+  const jobs = [
+    { id: "general", match: 82, studentFitScore: 0, publishedAtOriginal: new Date(FIXED_NOW - 60 * 60 * 1000).toISOString() },
+    { id: "student", match: 82, studentFitScore: 8, publishedAtOriginal: new Date(FIXED_NOW - 60 * 60 * 1000).toISOString() }
+  ];
+  jobs.sort((a, b) => logic.compareRank(a, b, FIXED_NOW));
+  assert.deepEqual(jobs.map((job) => job.id), ["student", "general"]);
+});
+
+test("cover-letter generator always writes German, names the role/employer, and uses only explicit student availability", () => {
+  const profile = logic.extractCvProfile(anonymizedCv);
+  const analysis = logic.matchJobToProfile({ title: "Servicekraft", summary: "Gästeservice und Unterstützung im Team." }, profile);
+  const letter = logic.buildGermanCoverLetter({ role: "Servicekraft", company: "Beispielhotel", analysis, profile });
+  assert.match(letter, /Bewerbung als Servicekraft bei Beispielhotel/);
+  assert.match(letter, /Sehr geehrte Damen und Herren/);
+  assert.match(letter, /Kunden- und Gästebetreuung/);
+  assert.match(letter, /bis zu 20 Stunden pro Woche/);
+  assert.match(letter, /Mit freundlichen Grüßen/);
+  assert.doesNotMatch(letter, /Dear |Sincerely|my relevant experience/i);
+
+  const withoutExplicitHours = logic.buildGermanCoverLetter({ role: "Küchenhilfe", company: "Musterbetrieb", analysis: {}, profile: { student: true, hoursPerWeekDuringSemester: null } });
+  assert.match(withoutExplicitHours, /Da ich studiere/);
+  assert.doesNotMatch(withoutExplicitHours, /0 Stunden|20 Stunden/);
+});
+
 test("freshness uses original publication time, caps at 14 days, and rejects missing, invalid, and future dates", () => {
   const daysAgo = (days) => new Date(FIXED_NOW - days * 24 * 60 * 60 * 1000).toISOString();
   assert.equal(logic.isDateEligible({ publishedAtOriginal: daysAgo(14), modifiedAt: daysAgo(0) }, 90, FIXED_NOW), true);
