@@ -18,6 +18,8 @@
     <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="stylesheet" href="styles.css">
+    <script src="job-logic.js" defer></script>
+    <script src="vendor/mammoth.browser.min.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -92,7 +94,7 @@
             <div class="split-grid">
               <form class="panel" id="cvForm">
                 <label class="field-label" for="cvFile" data-i18n="cvFile">CV file</label>
-                <input class="file-input" id="cvFile" type="file" accept=".txt,.md,.csv,.pdf,.doc,.docx">
+                <input class="file-input" id="cvFile" type="file" accept=".txt,.md,.csv,.pdf,.docx">
 
                 <label class="field-label" for="cvText" data-i18n="cvText">CV text</label>
                 <textarea id="cvText" rows="12" placeholder="Paste CV text here for stronger match scoring." data-i18n-placeholder="cvTextPlaceholder"></textarea>
@@ -150,9 +152,10 @@
                   <option value="5">5 km</option>
                   <option value="10">10 km</option>
                   <option value="25">25 km</option>
+                  <option value="30" selected>30 km</option>
                   <option value="50">50 km</option>
                   <option value="100">100 km</option>
-                  <option value="250" selected>250 km</option>
+                  <option value="250">250 km</option>
                 </select>
               </label>
               <label>
@@ -164,10 +167,7 @@
                 <select id="freshnessDays">
                   <option value="1" data-i18n="posted24Hours">24 hours</option>
                   <option value="7">7 days</option>
-                  <option value="14">14 days</option>
-                  <option value="30" selected>30 days</option>
-                  <option value="60">60 days</option>
-                  <option value="90">90 days</option>
+                  <option value="14" selected>14 days</option>
                 </select>
               </label>
               <label class="check-row inline-check">
