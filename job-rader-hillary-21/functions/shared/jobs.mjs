@@ -3,25 +3,13 @@ import { geocodePlace } from "./geocoder.mjs";
 
 const Logic = globalThis.JobRaderJobLogic;
 const ARBEITNOW_URL = "https://www.arbeitnow.com/api/job-board-api";
-const REMOTE_OK_URL = "https://remoteok.com/api";
-const JOBICY_URL = "https://jobicy.com/api/jobs?count=100&geo=germany";
-const WWR_URL = "https://weworkremotely.com/remote-jobs.rss";
 const ARBEITSAGENTUR_BASE_URL = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service";
 const ARBEITSAGENTUR_API_KEY = "jobboerse-jobsuche";
 const SOURCE_TIMEOUT_MS = 18000;
 const MAX_JOB_PLACE_GEOCODES = 8;
-const REMOTE_OK_CACHE_TTL_MS = 60000;
 const ARBEITNOW_CACHE_TTL_MS = 60000;
-const JOBICY_CACHE_TTL_MS = 60000;
-const WWR_CACHE_TTL_MS = 60000;
 let arbeitnowCache = null;
 let arbeitnowPending = null;
-let remoteOkCache = null;
-let remoteOkPending = null;
-let jobicyCache = null;
-let jobicyPending = null;
-let wwrCache = null;
-let wwrPending = null;
 const QUERY_STOP_WORDS = new Set([
   "job", "jobs", "role", "position", "work", "with", "from", "the", "and", "for", "und", "der", "die", "das",
   "in", "im", "am", "an", "of", "to", "a", "ein", "eine", "und"
@@ -233,171 +221,6 @@ async function fetchArbeitnow(query, fetcher, timeoutMs = SOURCE_TIMEOUT_MS) {
   }).filter((job) => matchesQuery(job, query));
 }
 
-async function fetchRemoteOk(query, fetcher, timeoutMs = SOURCE_TIMEOUT_MS) {
-  let payload;
-  if (fetcher !== globalThis.fetch) {
-    payload = await fetchJson(fetcher, REMOTE_OK_URL, { timeoutMs });
-  } else if (remoteOkCache && remoteOkCache.expiresAt > Date.now()) {
-    payload = remoteOkCache.payload;
-  } else {
-    if (!remoteOkPending) {
-      remoteOkPending = fetchJson(fetcher, REMOTE_OK_URL, { timeoutMs })
-        .then((value) => {
-          remoteOkCache = { payload: value, expiresAt: Date.now() + REMOTE_OK_CACHE_TTL_MS };
-          return value;
-        })
-        .finally(() => { remoteOkPending = null; });
-    }
-    payload = await remoteOkPending;
-  }
-  if (!Array.isArray(payload)) throw new Error("Invalid API response");
-  return payload.filter((job) => job && job.id).map((job) => {
-    const description = htmlToText(job.description || "");
-    const applyUrl = safeUrl(job.apply_url || job.url);
-    const epoch = job.epoch ? dateValue(job.epoch) : null;
-    return {
-      id: `remoteok-${job.id}`,
-      source: "Remote OK",
-      title: clean(job.position),
-      company: clean(job.company),
-      location: clean(job.location || "Remote"),
-      country: clean(job.location || "Remote"),
-      remote: true,
-      publishedAtOriginal: dateValue(job.date) || epoch,
-      modifiedAt: dateValue(job.updated_at || job.modified_at),
-      applyUrl,
-      sourceUrl: safeUrl(job.url || job.apply_url),
-      description,
-      summary: summarize(description),
-      tags: unique((job.tags || []).map(clean)).slice(0, 8),
-      salary: formatSalary(job.salary_min, job.salary_max),
-      contacts: extractContacts(description)
-    };
-  }).filter((job) => matchesQuery(job, query));
-}
-
-async function fetchFeedText(fetcher, url, timeoutMs = SOURCE_TIMEOUT_MS) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetcher(url, {
-      headers: { Accept: "application/rss+xml, application/xml, text/xml", "User-Agent": "JOB-RADER-HILLARY-21/2.1" },
-      signal: controller.signal,
-      cache: "no-store"
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return await response.text();
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function xmlValue(item, name) {
-  const match = item.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, "i"));
-  if (!match) return "";
-  const value = match[1].replace(/^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/, "$1");
-  return clean(htmlToText(value));
-}
-
-async function fetchJobicy(query, fetcher, timeoutMs = SOURCE_TIMEOUT_MS) {
-  let payload;
-  if (fetcher !== globalThis.fetch) {
-    payload = await fetchJson(fetcher, JOBICY_URL, { timeoutMs });
-  } else if (jobicyCache && jobicyCache.expiresAt > Date.now()) {
-    payload = jobicyCache.payload;
-  } else {
-    if (!jobicyPending) {
-      jobicyPending = fetchJson(fetcher, JOBICY_URL, { timeoutMs })
-        .then((value) => {
-          jobicyCache = { payload: value, expiresAt: Date.now() + JOBICY_CACHE_TTL_MS };
-          return value;
-        })
-        .finally(() => { jobicyPending = null; });
-    }
-    payload = await jobicyPending;
-  }
-  if (!Array.isArray(payload?.jobs)) throw new Error("Invalid API response");
-  return payload.jobs.map((job) => {
-    const description = htmlToText(job.jobDescription || job.jobExcerpt || "");
-    const applyUrl = safeUrl(job.url);
-    const tags = unique([...(Array.isArray(job.jobIndustry) ? job.jobIndustry : [job.jobIndustry]), ...(Array.isArray(job.jobType) ? job.jobType : [job.jobType]), ...(Array.isArray(job.jobLevel) ? job.jobLevel : [job.jobLevel])].map(clean)).slice(0, 10);
-    return {
-      id: `jobicy-${job.id || hash(`${job.companyName}-${job.jobTitle}-${job.url}`)}`,
-      source: "Jobicy",
-      title: clean(job.jobTitle),
-      company: clean(job.companyName),
-      location: clean(job.jobGeo || "Remote"),
-      country: clean(job.jobGeo || "Germany"),
-      remote: true,
-      publishedAtOriginal: dateValue(job.pubDate),
-      modifiedAt: null,
-      applyUrl,
-      sourceUrl: applyUrl,
-      description,
-      summary: summarize(clean(job.jobExcerpt || description)),
-      tags,
-      salary: formatSalary(job.salaryMin, job.salaryMax),
-      contacts: extractContacts(description)
-    };
-  }).filter((job) => matchesQuery(job, query));
-}
-
-async function fetchWeWorkRemotely(query, fetcher, timeoutMs = SOURCE_TIMEOUT_MS) {
-  let xml;
-  if (fetcher !== globalThis.fetch) {
-    xml = await fetchFeedText(fetcher, WWR_URL, timeoutMs);
-  } else if (wwrCache && wwrCache.expiresAt > Date.now()) {
-    xml = wwrCache.xml;
-  } else {
-    if (!wwrPending) {
-      wwrPending = fetchFeedText(fetcher, WWR_URL, timeoutMs)
-        .then((value) => {
-          wwrCache = { xml: value, expiresAt: Date.now() + WWR_CACHE_TTL_MS };
-          return value;
-        })
-        .finally(() => { wwrPending = null; });
-    }
-    xml = await wwrPending;
-  }
-  const items = [...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)].map((match) => match[1]);
-  if (!items.length) throw new Error("Invalid RSS response");
-  return items.map((item) => {
-    const fullTitle = xmlValue(item, "title");
-    const split = fullTitle.match(/^(.+?)\s*:\s*(.+)$/);
-    const link = safeUrl(xmlValue(item, "link"));
-    const description = xmlValue(item, "description");
-    const region = xmlValue(item, "region");
-    const country = xmlValue(item, "country");
-    const category = xmlValue(item, "category");
-    const skills = xmlValue(item, "skills");
-    return {
-      id: `wwr-${hash(link || fullTitle)}`,
-      source: "We Work Remotely",
-      title: clean(split ? split[2] : fullTitle),
-      company: clean(split ? split[1] : "Employer not listed"),
-      location: clean([region, country].filter(Boolean).join(", ") || "Remote"),
-      country: clean(country || "Remote"),
-      remote: true,
-      publishedAtOriginal: dateValue(xmlValue(item, "pubDate")),
-      modifiedAt: null,
-      applyUrl: link,
-      sourceUrl: link,
-      description,
-      summary: summarize(description),
-      tags: unique([category, skills].filter(Boolean)),
-      salary: "",
-      contacts: extractContacts(description)
-    };
-  }).filter((job) => matchesQuery(job, query));
-}
-
-function formatSalary(minimum, maximum) {
-  const min = Number(minimum);
-  const max = Number(maximum);
-  if (!Number.isFinite(min) && !Number.isFinite(max)) return "";
-  return min === max || !Number.isFinite(max) ? `€${(Number.isFinite(min) ? min : max).toLocaleString("en-US")}` : `€${min.toLocaleString("en-US")}–€${max.toLocaleString("en-US")}`;
-}
-
 async function fetchArbeitsagentur(query, location, radiusKm, days, selectedTypes, remoteOnly, fetcher, timeoutMs = SOURCE_TIMEOUT_MS) {
   const url = new URL(`${ARBEITSAGENTUR_BASE_URL}/pc/v6/jobs`);
   url.searchParams.set("angebotsart", "1");
@@ -598,9 +421,6 @@ export async function handleJobsRequest(request, dependencies = {}) {
 
   const sourceTasks = [
     ["Arbeitnow", () => fetchArbeitnow(query, fetcher, dependencies.sourceTimeoutMs ?? SOURCE_TIMEOUT_MS)],
-    ["Remote OK", () => fetchRemoteOk(query, fetcher, dependencies.sourceTimeoutMs ?? SOURCE_TIMEOUT_MS)],
-    ["Jobicy", () => fetchJobicy(query, fetcher, dependencies.sourceTimeoutMs ?? SOURCE_TIMEOUT_MS)],
-    ["We Work Remotely", () => fetchWeWorkRemotely(query, fetcher, dependencies.sourceTimeoutMs ?? SOURCE_TIMEOUT_MS)],
     ["Arbeitsagentur", () => fetchArbeitsagentur(query, location, radiusKm, days, selectedTypes, remoteOnly, fetcher, dependencies.sourceTimeoutMs ?? SOURCE_TIMEOUT_MS)]
   ];
   const settled = await Promise.allSettled(sourceTasks.map(([, run]) => run()));

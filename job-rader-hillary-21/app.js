@@ -125,6 +125,13 @@ const TRANSLATIONS = {
     strictUnverifiedPlaces: "{count} listing(s) without verifiable workplace distance were excluded.",
     partialSourceFailure: "Some sources failed ({sources}); results may be incomplete.",
     partialQueryFailure: "{count} search request(s) failed; successful results are shown without relaxing filters.",
+    sourceAudit: "Sources responding: {responded}. Sources with matching vacancies: {matching}. Failed sources: {failed}.",
+    externalSearchTitle: "Search these roles on external job platforms",
+    externalSearchNote: "These open the platforms' own pages, not verified vacancies in this feed. Searches use CV-derived role terms and a coarse city/postcode; distance, date and work-type filters are passed only where supported. Check each listing's exact location, date, hours and eligibility. Your CV text is never sent.",
+    externalSearchRole: "Role category",
+    externalSearchButton: "Search {platform}",
+    externalMore: "More boards, university and employer searches",
+    externalBrowseOnly: "Browse {platform}",
     originFallbackNotice: "Exact address was not verified; distances use the {precision} fallback. Edit the location field to correct it.",
     remoteDistanceNotice: "Remote vacancies are shown separately and do not have a local workplace distance.",
     noCvJobCategories: "No supported job category could be extracted from this CV. Add a role or paste clearer experience text; no unrelated roles were substituted.",
@@ -330,6 +337,7 @@ let autoSearchTimer = null;
 let lastAutoCvSignature = "";
 let activeSearchToken = 0;
 let resolvedOriginMemory = null;
+let lastExternalSearchConfig = null;
 let pdfjsPromise = null;
 let applications = loadApplications();
 let jobAlerts = loadJobAlerts();
@@ -643,6 +651,7 @@ function clearSearchDrafts() {
   $("#roleSearch").value = "";
   $("#locationSearch").value = "";
   resolvedOriginMemory = null;
+  lastExternalSearchConfig = null;
   $("#radiusKm").value = String(DEFAULT_RADIUS_KM);
   $("#minMatch").value = "0";
   $("#freshnessDays").value = "14";
@@ -808,13 +817,15 @@ async function searchLiveJobs() {
     return;
   }
 
+  const cvText = cvMemory?.text?.trim() || "";
+  const queries = buildManualSearchQueries(criteria.role);
+  lastExternalSearchConfig = prepareExternalSearchConfig(criteria, queries, cvText);
   $("#feedStatus").textContent = t("pullingJobs");
   $("#resultCount").textContent = t("searching");
   renderJobs([], { loading: true });
   const token = ++activeSearchToken;
-  const cvText = cvMemory?.text?.trim() || "";
   try {
-    const result = await loadLiveJobsStrict({ ...criteria, queries: buildManualSearchQueries(criteria.role), cvText });
+    const result = await loadLiveJobsStrict({ ...criteria, queries, cvText });
     if (token !== activeSearchToken) return;
     lastResults = result.jobs;
     renderJobs(result.jobs);
@@ -850,6 +861,7 @@ async function runAutoSearchFromCv(options = {}) {
     return;
   }
 
+  lastExternalSearchConfig = prepareExternalSearchConfig(criteria, queries, cvText);
   const token = ++activeSearchToken;
   $("#feedStatus").textContent = t("autoPullingJobs");
   $("#resultCount").textContent = t("searching");
@@ -912,6 +924,10 @@ async function loadLiveJobsStrict({ queries, location, radiusKm, days, remoteOnl
     throw new Error(`${t("searchAllSourcesFailed")}${sourceNames ? ` (${sourceNames})` : ""}`);
   }
 
+  const sourcesQueried = unique(payloads.flatMap((payload) => payload.sources || []));
+  const sourcesWithMatches = unique(payloads.flatMap((payload) =>
+    (payload.jobs || []).map((job) => job.source).filter(Boolean)
+  ));
   const profile = cvText ? JobLogic.extractCvProfile(cvText) : null;
   const scored = scoreJobs(mergeJobs(payloads.flatMap((payload) => payload.jobs || [])));
   const filtered = scored.filter((job) => {
@@ -936,6 +952,8 @@ async function loadLiveJobsStrict({ queries, location, radiusKm, days, remoteOnl
   return {
     jobs: filtered.slice(0, 60),
     payloads,
+    sourcesQueried,
+    sourcesWithMatches,
     sourceFailures,
     requestFailures,
     locationResolution,
@@ -977,10 +995,14 @@ function coarseSearchLocation(location) {
   if (!value) return "";
   const address = JobLogic.parseAddress(value);
   if (address.postcode || address.city) return [address.postcode, address.city].filter(Boolean).join(" ");
+  const streetMarker = /(?:straße|strasse|str\.?|weg|platz|allee|ring|gasse|damm|chaussee|ufer)/iu.test(value);
+  const hasHouseNumber = /\b\d{1,4}[a-z]?\b/i.test(value.replace(/\b\d{5}\b/g, ""));
+  if (streetMarker || hasHouseNumber) {
+    const postcodeCity = value.match(/\b\d{5}\s+[\p{L}][\p{L}\s.-]*$/u);
+    return postcodeCity ? postcodeCity[0].trim() : "";
+  }
   return value
-    .replace(/\b(?:straße|strasse|str\.?|weg|platz|allee|ring|gasse|damm|chaussee|ufer)\s+\d+[a-z]?\b/gi, "")
-    .replace(/,\s*,/g, ",")
-    .replace(/^,\s*|,\s*$/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -1038,7 +1060,12 @@ async function fetchJobsForQuery({ query, location, radiusKm, days, remoteOnly, 
 }
 
 function formatSearchStatus(result, criteria, cvText) {
-  const sources = unique(result.payloads.flatMap((payload) => payload.sources || [])).join(" + ") || "live sources";
+  const sources = result.sourcesWithMatches.join(" + ") || "none";
+  const audit = t("sourceAudit", {
+    responded: result.sourcesQueried.join(", ") || "none",
+    matching: result.sourcesWithMatches.join(", ") || "none",
+    failed: result.sourceFailures.join(", ") || "none"
+  });
   const latestGeneratedAt = result.payloads.map((payload) => payload.generatedAt).filter(Boolean).sort().at(-1) || new Date().toISOString();
   const count = result.jobs.length;
   let status;
@@ -1054,6 +1081,7 @@ function formatSearchStatus(result, criteria, cvText) {
   } else {
     status = t("noStrictMatches", { days: Math.min(14, criteria.days) });
   }
+  status += ` ${audit}`;
   if (result.sourceFailures.length) status += ` ${t("partialSourceFailure", { sources: result.sourceFailures.join(", ") })}`;
   if (result.requestFailures.length) status += ` ${t("partialQueryFailure", { count: result.requestFailures.length })}`;
   if (result.unverifiedWorkplaces) status += ` ${t("strictUnverifiedPlaces", { count: result.unverifiedWorkplaces })}`;
@@ -1087,6 +1115,39 @@ function buildManualSearchQueries(role) {
 
 function cleanRoleQuery(role) {
   return String(role || "").trim().replace(/\s+/g, " ");
+}
+
+function prepareExternalSearchConfig(criteria, queries, cvText) {
+  const profile = cvText ? JobLogic.extractCvProfile(cvText) : null;
+  const categoryTerms = {
+    service: "Servicekraft",
+    kitchen: "Küchenhilfe",
+    housekeeping: "Housekeeping",
+    warehouse: "Lagerhelfer",
+    retail: "Warenverräumung",
+    production: "Produktionshelfer"
+  };
+  const parsed = JobLogic.parseAddress(criteria.location || "");
+  const profileAddress = profile?.address || null;
+  const city = parsed.city || profileAddress?.city || "";
+  const postcode = parsed.postcode || profileAddress?.postcode || "";
+  const coarseLocation = [postcode, city].filter(Boolean).join(" ") || coarseSearchLocation(criteria.location) || "";
+  const cvRoles = (profile?.categories || []).map((category) => categoryTerms[category]).filter(Boolean);
+  const roles = unique([...(criteria.role ? [criteria.role, ...(queries || []).slice(1)] : cvRoles.length ? cvRoles : (queries || []))])
+    .map((role) => String(role || "").trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  return {
+    roles,
+    location: coarseLocation,
+    city: city || coarseLocation,
+    postcode,
+    radiusKm: Math.max(0, Number(criteria.radiusKm) || 0),
+    days: Math.min(14, Math.max(1, Number(criteria.days) || 14)),
+    types: Array.isArray(criteria.types) ? [...criteria.types] : [],
+    student: Boolean(profile?.student),
+    hoursPerWeek: profile?.hoursPerWeekDuringSemester ?? null
+  };
 }
 
 function deriveAutoSearchQueries(cvText) {
@@ -1291,6 +1352,155 @@ function distanceForDisplay(job) {
   return `${job.distanceApproximate ? "≈ " : ""}${value}`;
 }
 
+function externalSlug(value) {
+  return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function externalQueryForTypes(config) {
+  const types = (config.types || []).map((type) => String(type).toLowerCase());
+  const labels = [];
+  if (types.some((type) => type.includes("part"))) labels.push("Teilzeit");
+  if (types.some((type) => type.includes("student"))) labels.push("Studentenjob");
+  if (types.some((type) => type.includes("mini"))) labels.push("Minijob");
+  if (types.some((type) => type.includes("full"))) labels.push("Vollzeit");
+  if (config.student && !types.length) labels.push("Studentenjob", "Teilzeit", "Minijob");
+  return unique(labels);
+}
+
+function externalPlatformUrl(platform, role, config) {
+  const term = String(role || "").trim();
+  const city = config.city || config.location || "";
+  const location = config.location || city;
+  const radius = config.radiusKm > 0 ? String(config.radiusKm) : "";
+  const roleAndTypes = [term, ...externalQueryForTypes(config)].filter(Boolean).join(" ");
+  const params = new URLSearchParams();
+  if (platform === "kleinanzeigen") {
+    const placeIds = { leipzig: "4233", berlin: "3331", hamburg: "9409" };
+    const placeId = placeIds[externalSlug(city)];
+    if (placeId) {
+      const radiusPart = radius ? `r${radius}` : "";
+      return `https://www.kleinanzeigen.de/s-jobs/${externalSlug(city)}/${externalSlug(roleAndTypes)}/k0c102l${placeId}${radiusPart}`;
+    }
+    params.set("keywords", [roleAndTypes, location].filter(Boolean).join(" "));
+    return `https://www.kleinanzeigen.de/s-jobs/${externalSlug(roleAndTypes)}/c102?${params.toString()}`;
+  }
+  if (platform === "indeed") {
+    params.set("q", roleAndTypes || term);
+    if (location) params.set("l", location);
+    if (radius) params.set("radius", radius);
+    params.set("fromage", String(config.days || 14));
+    const selectedTypes = (config.types || []).map((type) => String(type).toLowerCase());
+    if (!selectedTypes.some((type) => type.includes("full")) && (config.student || selectedTypes.some((type) => /part|student|mini/.test(type)))) params.set("jt", "parttime");
+    return `https://de.indeed.com/jobs?${params.toString()}`;
+  }
+  if (platform === "studentjob") {
+    params.set("search[keywords_scope]", term);
+    if (config.postcode) params.set("search[zipcode_eq]", config.postcode);
+    if (city) params.set("region_name", city);
+    const types = (config.types || []).map((type) => String(type).toLowerCase());
+    const jobTypeIds = [];
+    if (config.student && !types.length) jobTypeIds.push("9", "2", "12", "4");
+    else {
+      if (types.some((type) => type.includes("student"))) jobTypeIds.push("9");
+      if (types.some((type) => type.includes("part"))) jobTypeIds.push("2");
+      if (types.some((type) => type.includes("mini"))) jobTypeIds.push("12", "4");
+    }
+    unique(jobTypeIds).forEach((id) => params.append("search[job_types][id][]", id));
+    return `https://www.studentjob.de/stellenangebote?${params.toString()}`;
+  }
+  if (platform === "stepstone") {
+    const path = city ? `/jobs/${externalSlug(roleAndTypes || term)}/in-${externalSlug(city)}` : `/jobs/${externalSlug(roleAndTypes || term)}`;
+    if (radius) params.set("radius", radius);
+    return `https://www.stepstone.de${path}${params.size ? `?${params.toString()}` : ""}`;
+  }
+  if (platform === "zenjob") {
+    params.set("search", roleAndTypes || term);
+    if (city) params.set("city", city);
+    return `https://www.zenjob.com/de/jobboerse?${params.toString()}`;
+  }
+  if (platform === "jobvalley") {
+    params.set("search", roleAndTypes || term);
+    if (city) params.set("location", city);
+    return `https://jobvalley.com/de-de/jobs?${params.toString()}`;
+  }
+  return "https://www.google.com/";
+}
+
+function appendExternalSearchPanel(list) {
+  const config = lastExternalSearchConfig;
+  if (!config?.roles?.length) return;
+  const primaryPlatforms = [
+    ["kleinanzeigen", "Kleinanzeigen"],
+    ["indeed", "Indeed Germany"],
+    ["studentjob", "StudentJob"],
+    ["stepstone", "StepStone"],
+    ["zenjob", "Zenjob"],
+    ["jobvalley", "jobvalley"]
+  ];
+  const additionalSites = [
+    ["Jobmensa", "jobmensa.de"],
+    ["Stellenwerk", "stellenwerk.de"],
+    ["YoungCapital", "youngcapital.de"],
+    ["JOBRUF", "jobruf.de"],
+    ["meinestadt.de", "jobs.meinestadt.de"],
+    ["NebenJob.de", "nebenjob.de"],
+    ["aushilfsjobs.info", "aushilfsjobs.info"],
+    ["Workwise", "workwise.io"],
+    ["Universität Leipzig", "uni-leipzig.de"],
+    ["HTWK Leipzig", "htwk-leipzig.de"],
+    ["Studentenwerk Leipzig", "studentenwerk-leipzig.de"]
+  ];
+  const roleOptions = config.roles.length > 1
+    ? `<label class="external-role-filter"><span>${escapeHtml(t("externalSearchRole"))}</span><select data-external-role>${config.roles.map((role, index) => `<option value="${escapeAttribute(role)}"${index === 0 ? " selected" : ""}>${escapeHtml(role)}</option>`).join("")}</select></label>`
+    : "";
+  const panel = document.createElement("section");
+  panel.className = "panel external-platform-searches";
+  panel.innerHTML = `
+    <div class="external-search-head">
+      <div><h3>${escapeHtml(t("externalSearchTitle"))}</h3><p>${escapeHtml(t("externalSearchNote"))}</p></div>
+      ${roleOptions}
+    </div>
+    <div class="external-platform-links" data-primary-platforms></div>
+    <details class="external-more"><summary>${escapeHtml(t("externalMore"))}</summary><div class="external-platform-links" data-additional-platforms></div></details>
+  `;
+  const roleSelect = panel.querySelector("[data-external-role]");
+  const selectedRole = roleSelect?.value || config.roles[0];
+  const primaryContainer = panel.querySelector("[data-primary-platforms]");
+  primaryContainer.innerHTML = primaryPlatforms.map(([id, label]) => `<a class="quiet-button" target="_blank" rel="noopener noreferrer" data-platform-search="${id}">${escapeHtml(t("externalSearchButton", { platform: label }))}</a>`).join("");
+  const additionalContainer = panel.querySelector("[data-additional-platforms]");
+  const googleLinks = additionalSites.map(([label, domain]) => {
+    const search = `site:${domain} ${selectedRole} ${config.location} ${externalQueryForTypes(config).join(" ")}`.trim();
+    const href = `https://www.google.com/search?${new URLSearchParams({ q: search, tbs: "qdr:d14" })}`;
+    return `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="${escapeAttribute(href)}">${escapeHtml(t("externalSearchButton", { platform: `Google · ${label}` }))}</a>`;
+  });
+  const employerQuery = `${selectedRole} ${config.location} Jobs Karriere Arbeitgeber`;
+  const generalQuery = `${selectedRole} ${config.location} Stellenangebot ${externalQueryForTypes(config).join(" ")}`.trim();
+  googleLinks.push(`<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: employerQuery, tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · local employer careers" }))}</a>`);
+  googleLinks.push(`<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: generalQuery, tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · indexed vacancies (14 days)" }))}</a>`);
+  additionalContainer.innerHTML = googleLinks.join("");
+  list.appendChild(panel);
+
+  const updatePlatformLinks = (role) => {
+    panel.querySelectorAll("[data-platform-search]").forEach((anchor) => {
+      anchor.href = externalPlatformUrl(anchor.dataset.platformSearch, role, config);
+    });
+  };
+  updatePlatformLinks(selectedRole);
+  roleSelect?.addEventListener("change", () => {
+    const role = roleSelect.value;
+    updatePlatformLinks(role);
+    additionalContainer.innerHTML = additionalSites.map(([label, domain]) => {
+      const search = `site:${domain} ${role} ${config.location} ${externalQueryForTypes(config).join(" ")}`.trim();
+      const href = `https://www.google.com/search?${new URLSearchParams({ q: search, tbs: "qdr:d14" })}`;
+      return `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="${escapeAttribute(href)}">${escapeHtml(t("externalSearchButton", { platform: `Google · ${label}` }))}</a>`;
+    }).concat([
+      `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: `${role} ${config.location} Jobs Karriere Arbeitgeber`, tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · local employer careers" }))}</a>`,
+      `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: `${role} ${config.location} Stellenangebot ${externalQueryForTypes(config).join(" ")}`.trim(), tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · indexed vacancies (14 days)" }))}</a>`
+    ]).join("");
+  });
+}
+
 function renderJobs(jobs, options = {}) {
   const list = $("#jobResults");
   list.innerHTML = "";
@@ -1298,6 +1508,7 @@ function renderJobs(jobs, options = {}) {
   if (options.loading) {
     $("#resultCount").textContent = t("searching");
     list.innerHTML = `<div class="panel empty-feed">${escapeHtml(t("searchingBoards"))}</div>`;
+    appendExternalSearchPanel(list);
     return;
   }
 
@@ -1312,6 +1523,7 @@ function renderJobs(jobs, options = {}) {
         <p>${escapeHtml(t("emptyFeedBody"))}</p>
       </div>
     `;
+    appendExternalSearchPanel(list);
     return;
   }
 
@@ -1364,6 +1576,7 @@ function renderJobs(jobs, options = {}) {
   $$("[data-cover-job]").forEach((button) => {
     button.addEventListener("click", () => openCoachForJob(button.dataset.coverJob, "cover"));
   });
+  appendExternalSearchPanel(list);
 }
 
 function openCoachForJob(jobId, mode) {

@@ -813,6 +813,61 @@ html[data-theme="dark"] .job-insights {
   grid-column: 1 / -1;
 }
 
+.external-platform-searches {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.external-search-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+}
+
+.external-platform-searches h3,
+.external-platform-searches p {
+  margin: 0;
+}
+
+.external-platform-searches p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.external-role-filter {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.external-role-filter span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.external-platform-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.external-platform-links a {
+  text-decoration: none;
+}
+
+.external-more summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.external-more .external-platform-links {
+  margin-top: 10px;
+}
+
 .empty-feed h3 {
   margin-top: 0;
 }
@@ -1047,7 +1102,8 @@ html[dir="rtl"] .sidebar {
 
   .topbar-actions,
   .section-head,
-  .button-row {
+  .button-row,
+  .external-search-head {
     align-items: stretch;
     flex-direction: column;
   }
