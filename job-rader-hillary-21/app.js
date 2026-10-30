@@ -1,4 +1,5 @@
 const APP_NAME = "JOB RADER HILLARY.21";
+const JobLogic = window.JobRaderJobLogic;
 const APPLICATIONS_KEY = "jrh21.applications.v2";
 const LEGACY_KEYS = ["jrh21.applications.v1"];
 const STATUSES = ["Wishlist", "Applied", "Screening", "Interview", "Offer", "Rejected"];
@@ -11,98 +12,9 @@ const LANGUAGE_KEY = "jrh21.language";
 const THEME_KEY = "jrh21.theme";
 const ALERTS_KEY = "jrh21.jobAlerts.v1";
 const AUTO_SEARCH_MIN_CV_CHARS = 80;
-const DEFAULT_RADIUS_KM = 250;
-const STRICT_CV_MATCH_SCORE = 35;
-const RELAXED_CV_MATCH_SCORE = 24;
+const DEFAULT_RADIUS_KM = 30;
 const PDFJS_LIB_URL = "./assets/pdf.min.mjs";
 const PDFJS_WORKER_URL = "./assets/pdf.worker.min.mjs";
-const HIGH_FREQUENCY_GERMANY_JOB_TITLES = [
-  "Küchenhilfe", "Spülkraft", "Kellner", "Barista", "Verkäufer", "Kassierer", "Reinigungskraft",
-  "Lieferfahrer", "Fahrradkurier", "Call-Center-Agent", "Kundenservice", "Bürohilfe", "Datenerfasser",
-  "Pflegehilfskraft", "Schulbegleiter", "Nachhilfelehrer", "Softwareentwickler", "Frontend Developer",
-  "Backend Developer", "Full-Stack Developer", "DevOps Engineer", "Cloud Engineer", "IT Administrator",
-  "IT Support", "Cybersecurity Analyst", "Data Analyst", "Data Scientist", "SAP Consultant", "Product Owner",
-  "Scrum Master", "QA Tester", "Ingenieur", "Maschinenbauingenieur", "Elektroingenieur", "Projektingenieur",
-  "Produktionsingenieur", "Qualitätsingenieur", "Automatisierungsingenieur", "Bauingenieur", "CAD Konstrukteur",
-  "Techniker", "Mechatroniker", "Elektroniker", "Pflegefachkraft", "Pflegehelfer", "Medizinische Fachangestellte",
-  "Physiotherapeut", "Laborant", "Lagerarbeiter", "Lagermitarbeiter", "Kommissionierer", "Verpacker",
-  "Staplerfahrer", "Logistikmitarbeiter", "Versandmitarbeiter", "LKW Fahrer", "Kurierfahrer", "Paketzusteller",
-  "Auslieferungsfahrer", "Zusteller", "Fahrer", "Delivery Driver", "Disponent",
-  "Koch", "Restaurantmitarbeiter", "Hotelmitarbeiter", "Rezeptionist", "Housekeeping", "Filialmitarbeiter",
-  "Verkaufsberater", "Kundenberater", "Sales Manager", "Account Manager", "Sachbearbeiter", "Büroassistent",
-  "Teamassistenz", "Projektassistenz", "Recruiter", "Buchhalter", "Controller", "Bauarbeiter", "Elektriker",
-  "Anlagenmechaniker", "Schweißer", "Tischler", "Dachdecker", "Produktionsmitarbeiter", "Maschinenbediener",
-  "Montagemitarbeiter", "Qualitätsprüfer", "Lehrer", "Erzieher", "Sozialarbeiter", "Sicherheitsmitarbeiter",
-  "Hausmeister", "Facility Manager", "Solarteur", "Photovoltaik Monteur", "Windenergie Techniker",
-  "Energieberater", "Nachhaltigkeitsmanager", "HSE Manager", "Studentenjob", "Minijob",
-  "Aushilfe", "Teilzeit", "Nebenjob", "Praktikum", "HiWi", "Laborhilfe", "Produktionshelfer",
-  "Lagerhelfer", "Eventhelfer", "Servicekraft", "Bauhelfer", "Aushilfe Wochenende"
-];
-const AUTO_FALLBACK_QUERIES = [
-  "Kundenservice", "Verkäufer", "Bürohilfe", "Lagerhelfer", "Reinigungskraft", "Data Analyst",
-  "Softwareentwickler", "Bauingenieur", "Pflegehelfer", "Produktionsmitarbeiter", "Lieferfahrer",
-  "Logistik", "Koch", "Kassierer"
-];
-const GERMANY_CITY_HINTS = [
-  "Berlin", "Hamburg", "Munich", "München", "Cologne", "Köln", "Frankfurt", "Stuttgart", "Düsseldorf",
-  "Dortmund", "Essen", "Leipzig", "Bremen", "Dresden", "Hannover", "Nürnberg", "Nuremberg",
-  "Duisburg", "Bochum", "Wuppertal", "Bielefeld", "Bonn", "Münster", "Karlsruhe", "Mannheim",
-  "Augsburg", "Wiesbaden", "Aachen", "Freiburg", "Mainz", "Potsdam", "Darmstadt", "Regensburg",
-  "Würzburg", "Ulm", "Koblenz", "Trier", "Jena", "Saarbrücken", "Osnabrück", "Paderborn",
-  "Heidelberg", "Ingolstadt", "Erfurt", "Rostock", "Kiel", "Kassel", "Magdeburg"
-];
-const MATCH_STOP_WORDS = new Set([
-  "about", "after", "also", "and", "are", "aufgaben", "benefits", "company", "der", "die", "das", "ein", "eine",
-  "for", "from", "have", "mit", "our", "requirements", "role", "that", "the", "this", "und", "with", "you", "your",
-  "will", "work", "jobs", "job", "find", "more", "germany", "remote", "team", "experience", "skills", "profile",
-  "candidate", "application", "apply", "position", "responsibilities", "required", "preferred", "using", "within"
-]);
-const ROLE_WORD_SYNONYMS = {
-  civil: ["bau", "bauingenieur", "construction"],
-  bau: ["civil", "construction"],
-  bauingenieur: ["civil", "construction"],
-  construction: ["bau", "civil", "bauingenieur"],
-  engineering: ["engineer", "ingenieur", "technik"],
-  engineer: ["engineering", "ingenieur"],
-  ingenieur: ["engineering", "engineer"],
-  mechanical: ["maschinenbau", "mechanic"],
-  maschinenbau: ["mechanical", "mechanic"],
-  electrical: ["elektro", "elektronik", "electronic"],
-  elektro: ["electrical", "electronic"],
-  software: ["developer", "entwickler", "entwicklung", "programming"],
-  developer: ["software", "entwickler", "entwicklung"],
-  entwickler: ["developer", "software"],
-  data: ["analytics", "analyse", "analyst"],
-  analyst: ["analysis", "analytics", "analyse"],
-  marketing: ["market", "sales"],
-  finance: ["accounting", "buchhaltung", "controller"],
-  accounting: ["buchhaltung", "finance"],
-  nursing: ["pflege", "pflegekraft"],
-  pflege: ["nursing", "care"],
-  logistics: ["logistik", "lager"],
-  logistik: ["logistics", "warehouse"],
-  dhl: ["lieferfahrer", "lieferung", "kurier", "fahrradkurier", "paketzusteller", "zusteller", "postbote", "paket", "pakete", "briefe", "auslieferungsfahrer", "delivery", "logistik"],
-  delivery: ["lieferung", "lieferfahrer", "kurier", "fahrradkurier", "paketzusteller", "auslieferungsfahrer", "zusteller"],
-  lieferfahrer: ["delivery", "driver", "kurier", "fahrradkurier", "auslieferungsfahrer", "zusteller"],
-  lieferung: ["delivery", "lieferfahrer", "kurier"],
-  kurier: ["courier", "delivery", "lieferfahrer"],
-  fahrradkurier: ["bike", "courier", "delivery", "lieferfahrer"],
-  paketzusteller: ["parcel", "paket", "pakete", "delivery", "lieferfahrer", "zusteller", "postbote"],
-  zusteller: ["delivery", "paketzusteller", "lieferfahrer", "postbote", "paket"],
-  auslieferungsfahrer: ["delivery", "lieferfahrer", "fahrer", "kurier"],
-  postbote: ["post", "paket", "pakete", "briefe", "zusteller", "delivery"],
-  paket: ["parcel", "pakete", "paketzusteller", "postbote", "delivery"],
-  fahrer: ["driver", "lieferfahrer", "delivery", "auslieferungsfahrer"],
-  driver: ["fahrer", "delivery", "lieferfahrer", "auslieferungsfahrer"],
-  student: ["werkstudent", "studentenjob", "praktikum", "internship"],
-  werkstudent: ["student", "studentenjob", "working student"],
-  internship: ["praktikum", "intern"],
-  praktikum: ["internship", "intern"],
-  part: ["teilzeit"],
-  teilzeit: ["part"],
-  mini: ["minijob"],
-  minijob: ["mini"]
-};
 const MANUAL_QUERY_EXPANSIONS = [
   { test: /\b(civil|construction)\b|\bbau/i, queries: ["Bauingenieur", "Bauingenieurwesen", "construction engineer"] },
   { test: /\bmechanical\b|maschinenbau/i, queries: ["Maschinenbau", "mechanical engineer"] },
@@ -147,7 +59,7 @@ const TRANSLATIONS = {
     privacyActions: "Privacy Actions",
     clearSearchDrafts: "Clear Search Drafts",
     factoryReset: "Factory Reset App",
-    uploadNoticeDefault: "CV content is not uploaded or saved to browser storage.",
+    uploadNoticeDefault: "Raw CV text is parsed in this browser and kept in page memory only; it is never stored or sent to job boards. CV-driven searches send role terms only. Radius searches send the entered or inferred address to Photon for geocoding; job searches use the coarse postcode/city and selected radius. Clear CV + Searches to erase temporary data.",
     noCvLoaded: "No CV loaded. Upload or paste a CV before matching.",
     cvLoaded: "{name} loaded for this session. Delete it before using another CV.",
     jobFeed: "Job Feed",
@@ -157,7 +69,7 @@ const TRANSLATIONS = {
     rolePlaceholder: "Civil engineering, nursing, design",
     location: "Postal code or city",
     locationPlaceholder: "10115 Berlin, Munich, remote",
-    minimumSuccess: "Minimum success",
+    minimumSuccess: "Minimum CV match",
     postedWithin: "Posted within",
     posted24Hours: "24 hours",
     remoteOnly: "Remote only",
@@ -204,6 +116,25 @@ const TRANSLATIONS = {
     fallbackJobsLoaded: "Showing broader current jobs because the first search was too narrow.",
     minimumRelaxed: "The app broadened the freshness window but kept CV and role relevance checks on.",
     liveJobsFailed: "Live jobs could not be loaded right now. Check your connection and try again.",
+    searchAllSourcesFailed: "The live search failed across all available sources; this is not a no-jobs result. Try again later.",
+    locationRequiredForRadius: "Enter a location or explicitly choose Any distance. The selected radius was not removed.",
+    locationResolutionFailed: "The selected location could not be verified. Correct it or choose Any distance; no wider search was run.",
+    noStrictMatches: "No live vacancies matched the selected role, {days}-day freshness window, and location filters. No limits were widened.",
+    noResultsWithSourceFailures: "No verified vacancies were returned from responding sources; because one or more sources failed, this is not a confirmed no-jobs result.",
+    noHighMatches: "No 85%+ CV-compatible vacancies were found within the selected radius and last {days} days.",
+    strictUnverifiedPlaces: "{count} listing(s) without verifiable workplace distance were excluded.",
+    partialSourceFailure: "Some sources failed ({sources}); results may be incomplete.",
+    partialQueryFailure: "{count} search request(s) failed; successful results are shown without relaxing filters.",
+    sourceAudit: "Sources responding: {responded}. Sources with matching vacancies: {matching}. Failed sources: {failed}.",
+    externalSearchTitle: "Search these roles on external job platforms",
+    externalSearchNote: "These open the platforms' own pages, not verified vacancies in this feed. Searches use CV-derived role terms and a coarse city/postcode; distance, date and work-type filters are passed only where supported. Check each listing's exact location, date, hours and eligibility. Your CV text is never sent.",
+    externalSearchRole: "Role category",
+    externalSearchButton: "Search {platform}",
+    externalMore: "More boards, university and employer searches",
+    externalBrowseOnly: "Browse {platform}",
+    originFallbackNotice: "Exact address was not verified; distances use the {precision} fallback. Edit the location field to correct it.",
+    remoteDistanceNotice: "Remote vacancies are shown separately and do not have a local workplace distance.",
+    noCvJobCategories: "No supported job category could be extracted from this CV. Add a role or paste clearer experience text; no unrelated roles were substituted.",
     zeroRoles: "Finding live jobs",
     freshRoles: "{count} fresh {roleWord}",
     roleWordOne: "role",
@@ -259,10 +190,13 @@ const TRANSLATIONS = {
     installIphone: "Open this site in Safari, tap Share, then choose Add to Home Screen.",
     installLaptop: "Open this site in Chrome or Edge and click the install icon in the address bar, or use the browser menu and choose Install.",
     installNote: "The app is a PWA, so phones and laptops install it from the browser without needing an app-store download.",
-    selectedFileNeedsText: "Selected {name}. Paste the CV text for detailed matching and instant recommendations.",
+    selectedFileNeedsText: "Selected {name}. Supported local formats are PDF, DOCX, and text; paste its text if this file cannot be read.",
     readingPdf: "Reading text from {name}...",
     pdfTextLoaded: "{name} text was extracted in this browser and is ready for matching.",
     pdfTextMissing: "The app could not read useful text from {name}. Paste the CV text instead.",
+    readingDocx: "Reading text from {name} in this browser...",
+    docxTextLoaded: "{name} text was extracted locally and is ready for matching.",
+    docxTextMissing: "The app could not read useful text from {name}. Paste the CV text instead.",
     fileLoaded: "{name} is loaded in memory only. Delete it before uploading another person's CV.",
     fileReadError: "The file could not be read. Paste the CV text instead.",
     cvReady: "CV is ready. Search live jobs to score it against fresh listings.",
@@ -274,13 +208,15 @@ const TRANSLATIONS = {
     storageUnavailable: "Applications are kept for this session because browser storage is unavailable.",
     updated: "Updated {time}",
     savedMetric: "Saved",
-    bestSuccessMetric: "Best Success",
-    liveAvgMetric: "Live Avg",
+    bestSuccessMetric: "Best CV match",
+    liveAvgMetric: "Average CV match",
     dateNotListed: "date not listed",
     remote: "Remote",
     locationNotListed: "Location not listed",
     uploadCvShort: "upload CV",
-    percentSuccess: "% success",
+    percentSuccess: "CV match",
+    percentCompatibility: "CV compatibility",
+    originallyPublished: "Originally published",
     cvNeeded: "CV needed",
     percentMatch: "{score}% match",
     interestNotPublished: "Interest not published",
@@ -294,7 +230,7 @@ const TRANSLATIONS = {
     apply: "Apply",
     cvTips: "CV Tips",
     coverLetterAction: "Cover Letter",
-    noCvRecommendation: "Upload or paste a CV to calculate your success rate and get targeted improvements.",
+    noCvRecommendation: "Upload or paste a CV to calculate CV compatibility and get targeted improvements.",
     addEvidence: "Add evidence for these job keywords: {keywords}.",
     keepStrengths: "Keep these strengths visible near the top: {strengths}.",
     mirrorTitle: "Mirror the job title \"{title}\" in your summary if it is truthful.",
@@ -302,7 +238,7 @@ const TRANSLATIONS = {
     rewriteProfile: "Before applying, rewrite the profile section and top skills so the first screen matches the role requirements.",
     improveCover: "Your CV already has useful overlap. Improve the cover letter by connecting your strongest match to the company's stated work.",
     recommendationsTitle: "CV recommendations for {role} at {company}",
-    estimatedSuccess: "Estimated success rate: {value}",
+    estimatedSuccess: "Estimated CV compatibility: {value}",
     uploadCvFirst: "Upload a CV first",
     immediateImprovements: "Immediate improvements",
     keywordsToAdd: "Keywords to add truthfully",
@@ -400,6 +336,8 @@ let selectedJob = null;
 let autoSearchTimer = null;
 let lastAutoCvSignature = "";
 let activeSearchToken = 0;
+let resolvedOriginMemory = null;
+let lastExternalSearchConfig = null;
 let pdfjsPromise = null;
 let applications = loadApplications();
 let jobAlerts = loadJobAlerts();
@@ -588,6 +526,7 @@ async function handleFileSelection(event) {
 
   const textArea = $("#cvText");
   const pdfFriendly = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
+  const docxFriendly = /\.docx$/i.test(file.name) || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   const textFriendly = /\.(txt|md|csv)$/i.test(file.name) || file.type.startsWith("text/");
   textArea.value = "";
   cvMemory = null;
@@ -614,6 +553,28 @@ async function handleFileSelection(event) {
       textArea.value = "";
       cvMemory = null;
       setNotice(t("pdfTextMissing", { name: file.name }));
+      updatePrivacyStatus();
+    }
+    return;
+  }
+
+  if (docxFriendly) {
+    try {
+      setNotice(t("readingDocx", { name: file.name }));
+      if (!window.mammoth?.extractRawText) throw new Error("Local DOCX parser is unavailable.");
+      const result = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+      const text = String(result?.value || "").trim();
+      if (text.length < 40) throw new Error("No useful text extracted from DOCX.");
+      textArea.value = text;
+      cvMemory = { name: file.name, text, updatedAt: new Date().toISOString() };
+      refreshScoredJobs();
+      setNotice(t("docxTextLoaded", { name: file.name }));
+      updatePrivacyStatus();
+      scheduleAutoSearchFromCv({ immediate: true });
+    } catch {
+      textArea.value = "";
+      cvMemory = null;
+      setNotice(t("docxTextMissing", { name: file.name }));
       updatePrivacyStatus();
     }
     return;
@@ -665,22 +626,7 @@ async function extractPdfText(file) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    const lines = [];
-    let lastY = null;
-    let line = [];
-    content.items.forEach((item) => {
-      const y = Math.round(item.transform?.[5] || 0);
-      if (lastY !== null && Math.abs(y - lastY) > 4 && line.length) {
-        lines.push(line.join(" ").replace(/\s+/g, " ").trim());
-        line = [];
-      }
-      line.push(item.str || "");
-      lastY = y;
-    });
-    if (line.length) {
-      lines.push(line.join(" ").replace(/\s+/g, " ").trim());
-    }
-    pages.push(lines.filter(Boolean).join("\n"));
+    pages.push(JobLogic.extractPdfPageLines(content.items).join("\n"));
   }
   return pages.join("\n\n").replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
@@ -704,9 +650,11 @@ function deleteCv(options = {}) {
 function clearSearchDrafts() {
   $("#roleSearch").value = "";
   $("#locationSearch").value = "";
+  resolvedOriginMemory = null;
+  lastExternalSearchConfig = null;
   $("#radiusKm").value = String(DEFAULT_RADIUS_KM);
   $("#minMatch").value = "0";
-  $("#freshnessDays").value = "30";
+  $("#freshnessDays").value = "14";
   $("#remoteOnly").checked = false;
   $$("input[name='jobType']").forEach((input) => {
     input.checked = false;
@@ -764,9 +712,6 @@ async function useBrowserLocation() {
       throw new Error("No usable address returned.");
     }
     $("#locationSearch").value = location;
-    if (!Number($("#radiusKm").value || 0)) {
-      $("#radiusKm").value = String(DEFAULT_RADIUS_KM);
-    }
     $("#feedStatus").textContent = t("locationReady", { location });
     if (cvMemory?.text?.trim()) {
       await runAutoSearchFromCv({ force: true });
@@ -803,7 +748,7 @@ async function reverseBrowserLocation(latitude, longitude) {
     return "";
   }
   const payload = await response.json();
-  return payload.location || "";
+  return typeof payload.location === "string" ? payload.location : payload.location?.location || "";
 }
 
 function scheduleAutoSearchFromCv(options = {}) {
@@ -823,10 +768,6 @@ function scheduleAutoSearchFromCv(options = {}) {
 }
 
 function ensureLocationAndRadiusFromCv() {
-  const radius = $("#radiusKm");
-  if (!Number(radius.value || 0)) {
-    radius.value = String(DEFAULT_RADIUS_KM);
-  }
   if ($("#locationSearch").value.trim()) {
     return;
   }
@@ -837,17 +778,8 @@ function ensureLocationAndRadiusFromCv() {
 }
 
 function inferLocationFromCv(text) {
-  const normalized = String(text || "").replace(/\s+/g, " ");
-  const postalWithCity = normalized.match(/\b(\d{5})\s+([A-ZÄÖÜ][A-Za-zÄÖÜäöüß-]{2,})\b/);
-  if (postalWithCity) {
-    return `${postalWithCity[1]} ${postalWithCity[2]}`;
-  }
-  const postal = normalized.match(/\b\d{5}\b/);
-  if (postal) {
-    return postal[0];
-  }
-  const lower = normalized.toLowerCase();
-  return GERMANY_CITY_HINTS.find((city) => lower.includes(city.toLowerCase())) || "";
+  const address = JobLogic.extractCvProfile(text).address;
+  return address?.query || "";
 }
 
 function getSelectedJobTypes() {
@@ -860,19 +792,16 @@ function getCurrentSearchCriteria() {
     location: $("#locationSearch").value.trim(),
     radiusKm: Number($("#radiusKm").value || DEFAULT_RADIUS_KM),
     minimum: Number($("#minMatch").value || 0),
-    days: Number($("#freshnessDays").value || 30),
+    days: Math.min(14, Number($("#freshnessDays").value || 14)),
     remoteOnly: $("#remoteOnly").checked,
     types: getSelectedJobTypes()
   };
 }
 
 async function searchLiveJobs() {
-  if (cvMemory?.text?.trim()) {
-    ensureLocationAndRadiusFromCv();
-  }
-  const { role, location, radiusKm, minimum, days, remoteOnly, types } = getCurrentSearchCriteria();
-
-  if (!role) {
+  if (cvMemory?.text?.trim()) ensureLocationAndRadiusFromCv();
+  const criteria = getCurrentSearchCriteria();
+  if (!criteria.role) {
     if (cvMemory?.text?.trim()) {
       await runAutoSearchFromCv({ force: true });
       return;
@@ -882,254 +811,284 @@ async function searchLiveJobs() {
     renderJobs([]);
     return;
   }
+  if (criteria.radiusKm > 0 && !criteria.location && !criteria.remoteOnly) {
+    $("#feedStatus").textContent = t("locationRequiredForRadius");
+    renderJobs([]);
+    return;
+  }
 
+  const cvText = cvMemory?.text?.trim() || "";
+  const queries = buildManualSearchQueries(criteria.role);
+  lastExternalSearchConfig = prepareExternalSearchConfig(criteria, queries, cvText);
   $("#feedStatus").textContent = t("pullingJobs");
   $("#resultCount").textContent = t("searching");
   renderJobs([], { loading: true });
-
   const token = ++activeSearchToken;
   try {
-    const { jobs, payloads, relaxedMinimum } = await loadLiveJobsWithFallback({
-      queries: buildManualSearchQueries(role),
-      location,
-      radiusKm,
-      days,
-      remoteOnly,
-      types,
-      minimum,
-      includeFallbacks: true,
-      allowDifferentRoleFallbacks: false,
-      strictCv: Boolean(cvMemory?.text?.trim()),
-      typedRole: role
-    });
-    if (token !== activeSearchToken) {
-      return;
-    }
-    lastResults = jobs;
-    renderJobs(jobs);
-    checkLocalAlerts(jobs);
-    const latestPayload = payloads[0] || {};
-    const sourceText = unique(payloads.flatMap((payload) => payload.sources || [])).join(" + ") || "live sources";
-    $("#feedStatus").textContent = t("liveJobsLoaded", {
-      count: jobs.length,
-      roleWord: jobs.length === 1 ? t("roleWordOne") : t("roleWordMany"),
-      sources: sourceText,
-      time: latestPayload.generatedAt ? new Date(latestPayload.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    });
-    if (jobs.length && relaxedMinimum) {
-      $("#feedStatus").textContent += ` ${t("minimumRelaxed")}`;
-    }
-
-    if ($("#autoDeleteCv").checked) {
+    const result = await loadLiveJobsStrict({ ...criteria, queries, cvText });
+    if (token !== activeSearchToken) return;
+    lastResults = result.jobs;
+    renderJobs(result.jobs);
+    checkLocalAlerts(result.jobs);
+    $("#feedStatus").textContent = formatSearchStatus(result, criteria, cvText);
+    if ($("#autoDeleteCv").checked && cvText) {
       deleteCv({ quiet: true });
       setNotice(t("cvDeletedAfterSearch"));
     }
   } catch (error) {
-    if (token !== activeSearchToken) {
-      return;
-    }
+    if (token !== activeSearchToken) return;
     lastResults = [];
     renderJobs([]);
-    $("#feedStatus").textContent = t("liveJobsFailed");
+    $("#feedStatus").textContent = error?.message || t("liveJobsFailed");
   }
 }
 
 async function runAutoSearchFromCv(options = {}) {
   const cvText = cvMemory?.text?.trim() || "";
-  if (!cvText) {
-    return;
-  }
+  if (!cvText) return;
   ensureLocationAndRadiusFromCv();
   const criteria = getCurrentSearchCriteria();
-  const queries = deriveAutoSearchQueries(cvText);
+  const queries = criteria.role ? buildManualSearchQueries(criteria.role) : deriveAutoSearchQueries(cvText);
+  if (!queries.length) {
+    $("#feedStatus").textContent = t("noCvJobCategories");
+    renderJobs([]);
+    return;
+  }
+  if (criteria.radiusKm > 0 && !criteria.location && !criteria.remoteOnly) {
+    $("#feedStatus").textContent = t("locationRequiredForRadius");
+    renderJobs([]);
+    showRoute("jobs");
+    return;
+  }
+
+  lastExternalSearchConfig = prepareExternalSearchConfig(criteria, queries, cvText);
   const token = ++activeSearchToken;
   $("#feedStatus").textContent = t("autoPullingJobs");
   $("#resultCount").textContent = t("searching");
   renderJobs([], { loading: true });
   showRoute("jobs");
-
   try {
-    const cvRole = criteria.role || derivePrimaryCvRole(cvText);
-    const { jobs, payloads, usedFallbacks, relaxedMinimum } = await loadLiveJobsWithFallback({
-      queries,
-      location: criteria.location,
-      radiusKm: criteria.radiusKm,
-      days: criteria.days,
-      remoteOnly: criteria.remoteOnly,
-      types: criteria.types,
-      minimum: criteria.minimum,
-      includeFallbacks: true,
-      allowDifferentRoleFallbacks: !cvRole,
-      strictCv: options.strict !== false,
-      typedRole: cvRole
-    });
-    if (token !== activeSearchToken) {
-      return;
-    }
-    lastResults = jobs;
-    renderJobs(jobs);
-    checkLocalAlerts(jobs);
-    const sourceText = unique(payloads.flatMap((payload) => payload.sources || [])).join(" + ") || "live sources";
-    const latestTime = payloads[0]?.generatedAt || new Date().toISOString();
-    $("#feedStatus").textContent = t("autoJobsLoaded", {
-      count: jobs.length,
-      roleWord: jobs.length === 1 ? t("roleWordOne") : t("roleWordMany"),
-      sources: sourceText,
-      time: new Date(latestTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    });
-    if (jobs.length && usedFallbacks) {
-      $("#feedStatus").textContent += ` ${t("fallbackJobsLoaded")}`;
-    }
-    if (jobs.length && relaxedMinimum) {
-      $("#feedStatus").textContent += ` ${t("minimumRelaxed")}`;
-    }
+    const result = await loadLiveJobsStrict({ ...criteria, queries, cvText });
+    if (token !== activeSearchToken) return;
+    lastResults = result.jobs;
+    renderJobs(result.jobs);
+    checkLocalAlerts(result.jobs);
+    $("#feedStatus").textContent = formatSearchStatus(result, criteria, cvText);
     if ($("#autoDeleteCv").checked) {
       deleteCv({ quiet: true });
       setNotice(t("cvDeletedAfterSearch"));
     }
-  } catch {
-    if (token !== activeSearchToken) {
-      return;
-    }
+  } catch (error) {
+    if (token !== activeSearchToken) return;
     lastResults = [];
     renderJobs([]);
-    $("#feedStatus").textContent = t("liveJobsFailed");
+    $("#feedStatus").textContent = error?.message || t("liveJobsFailed");
   }
 }
 
-async function loadLiveJobsWithFallback({ queries, location, radiusKm, days, remoteOnly, types, minimum, includeFallbacks, allowDifferentRoleFallbacks, strictCv, typedRole }) {
-  const primaryQueries = unique(queries.map((query) => query.trim()).filter(Boolean)).slice(0, 8);
+async function loadLiveJobsStrict({ queries, location, radiusKm, days, remoteOnly, types, minimum, cvText }) {
+  const boundedDays = Math.min(14, Math.max(1, Number(days) || 14));
+  const boundedRadius = Math.max(0, Number(radiusKm) || 0);
+  const searchQueries = unique((queries || []).map((query) => String(query || "").trim()).filter(Boolean)).slice(0, 12);
+  if (!searchQueries.length) throw new Error(t("noCvJobCategories"));
+  if (boundedRadius > 0 && !location && !remoteOnly) throw new Error(t("locationRequiredForRadius"));
+
+  let origin = null;
+  if (boundedRadius > 0 && location && !remoteOnly) {
+    origin = await resolveOriginForSearch(location);
+    if (!origin) throw new Error(t("locationResolutionFailed"));
+  }
+  const sourceLocation = coarseSearchLocation(location);
+  const settled = await runWithConcurrency(searchQueries, 3, (query) => fetchJobsForQuery({
+    query,
+    location: sourceLocation,
+    radiusKm: boundedRadius,
+    days: boundedDays,
+    remoteOnly,
+    types,
+    origin
+  }));
   const payloads = [];
-  let rawJobs = [];
-  for (const query of primaryQueries) {
-    const payload = await fetchJobsForQuery({ query, location, radiusKm, days, remoteOnly, types });
-    payloads.push(payload);
-    rawJobs.push(...(payload.jobs || []));
-    if (rawJobs.length >= 80) {
-      break;
+  const requestFailures = [];
+  const providerFailuresFromErrors = [];
+  for (const result of settled) {
+    if (result.status === "fulfilled") {
+      payloads.push(result.value);
+    } else {
+      requestFailures.push(result.reason);
+      providerFailuresFromErrors.push(...Object.keys(result.reason?.sourceFailures || {}));
     }
+  }
+  if (!payloads.length) {
+    const sourceNames = unique(providerFailuresFromErrors).join(", ");
+    throw new Error(`${t("searchAllSourcesFailed")}${sourceNames ? ` (${sourceNames})` : ""}`);
   }
 
-  let usedFallbacks = false;
-  if (includeFallbacks && allowDifferentRoleFallbacks && rawJobs.length < 8) {
-    usedFallbacks = true;
-    for (const query of AUTO_FALLBACK_QUERIES) {
-      const payload = await fetchJobsForQuery({ query, location, radiusKm, days, remoteOnly, types: [] });
-      payloads.push(payload);
-      rawJobs.push(...(payload.jobs || []));
-      if (rawJobs.length >= 30) {
-        break;
-      }
-    }
-  }
-  if (includeFallbacks && allowDifferentRoleFallbacks && rawJobs.length < 8 && location) {
-    usedFallbacks = true;
-    for (const query of AUTO_FALLBACK_QUERIES) {
-      const payload = await fetchJobsForQuery({ query, location: "", radiusKm: 0, days, remoteOnly, types: [] });
-      payloads.push(payload);
-      rawJobs.push(...(payload.jobs || []));
-      if (rawJobs.length >= 30) {
-        break;
-      }
-    }
-  }
-  if (includeFallbacks && rawJobs.length < 8 && days < 90) {
-    usedFallbacks = true;
-    for (const query of (allowDifferentRoleFallbacks ? AUTO_FALLBACK_QUERIES.slice(0, 4) : primaryQueries)) {
-      const payload = await fetchJobsForQuery({ query, location, radiusKm: Math.max(radiusKm, DEFAULT_RADIUS_KM), days: 90, remoteOnly, types });
-      payloads.push(payload);
-      rawJobs.push(...(payload.jobs || []));
-      if (rawJobs.length >= 30) {
-        break;
-      }
-    }
-  }
-  if (includeFallbacks && allowDifferentRoleFallbacks && rawJobs.length < 8) {
-    usedFallbacks = true;
-    const payload = await fetchJobsForQuery({ query: "", location: "", radiusKm: 0, days: Math.max(days, 30), remoteOnly, types: [] });
-    payloads.push(payload);
-    rawJobs.push(...(payload.jobs || []));
-  }
+  const sourcesQueried = unique(payloads.flatMap((payload) => payload.sources || []));
+  const sourcesWithMatches = unique(payloads.flatMap((payload) =>
+    (payload.jobs || []).map((job) => job.source).filter(Boolean)
+  ));
+  const profile = cvText ? JobLogic.extractCvProfile(cvText) : null;
+  const scored = scoreJobs(mergeJobs(payloads.flatMap((payload) => payload.jobs || [])));
+  const filtered = scored.filter((job) => {
+    if (!JobLogic.isDateEligible(job, boundedDays, Date.now())) return false;
+    if (remoteOnly && !job.remote) return false;
+    if (boundedRadius > 0 && !remoteOnly && (job.remote || job.locationVerified !== true || !JobLogic.isDistanceEligible(job.distanceKm, boundedRadius))) return false;
+    if (types.length && !(job.jobTypes || []).some((type) => types.includes(type))) return false;
+    if (profile?.categories?.length && !job.roleAligned) return false;
+    if (profile && minimum > 0 && Number(job.match || 0) < minimum) return false;
+    return Boolean(job.title && job.company && /^https:\/\//i.test(job.applyUrl || ""));
+  }).sort((a, b) => JobLogic.compareRank(a, b));
 
-  const merged = mergeJobs(rawJobs);
-  let scored = scoreJobs(merged, { role: typedRole, location, radiusKm });
-  let filtered = filterRelevantJobs(scored, {
-    minimum,
-    strictCv,
-    typedRole,
-    relaxed: false
-  });
-  let relaxedMinimum = false;
-  if (!filtered.length && scored.length) {
-    filtered = filterRelevantJobs(scored, {
-      minimum: Math.min(minimum, RELAXED_CV_MATCH_SCORE),
-      strictCv,
-      typedRole,
-      relaxed: true
-    });
-    relaxedMinimum = Boolean(filtered.length);
-  }
-  if (!filtered.length && scored.length && strictCv) {
-    filtered = scored
-      .filter((job) => Number(job.match || 0) >= 18)
-      .filter((job) => Number(job.evidenceCount || 0) >= 1)
-      .filter((job) => !typedRole || job.roleAligned)
-      .filter((job) => !typedRole || job.titleAligned || Number(job.match || 0) >= 50)
-      .slice(0, 20);
-    relaxedMinimum = Boolean(filtered.length);
-  }
-  if (!filtered.length && scored.length && !strictCv) {
-    filtered = scored.slice(0, 20);
-  }
+  const sourceFailures = unique([
+    ...providerFailuresFromErrors,
+    ...payloads.flatMap((payload) => Object.keys(payload.sourceFailures || {}))
+  ]);
+  const maxUnverifiedWorkplaces = Math.max(0, ...payloads.map((payload) => Number(payload.counts?.unverifiedWorkplaces || 0)));
+  const locationResolution = origin ? {
+    ...origin,
+    remoteOnly: false
+  } : remoteOnly ? { precision: "remote", fallback: false } : null;
   return {
     jobs: filtered.slice(0, 60),
     payloads,
-    usedFallbacks,
-    relaxedMinimum
+    sourcesQueried,
+    sourcesWithMatches,
+    sourceFailures,
+    requestFailures,
+    locationResolution,
+    unverifiedWorkplaces: maxUnverifiedWorkplaces
   };
 }
 
-function filterRelevantJobs(scored, { minimum = 0, strictCv = false, typedRole = "", relaxed = false }) {
-  const requestedMinimum = Number(minimum || 0);
-  if (!strictCv) {
-    return scored.filter((job) => !requestedMinimum || job.match == null || Number(job.match || 0) >= requestedMinimum);
+async function resolveOriginForSearch(location) {
+  const query = String(location || "").trim().replace(/\s+/g, " ");
+  if (resolvedOriginMemory?.query === query) return resolvedOriginMemory.result;
+  const params = new URLSearchParams({ query });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 9000);
+  try {
+    const response = await fetch(`${LOCATION_ENDPOINT}?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.ok || !Number.isFinite(Number(payload.location?.latitude)) || !Number.isFinite(Number(payload.location?.longitude))) {
+      throw new Error(payload.notice || payload.error || t("locationResolutionFailed"));
+    }
+    const result = {
+      latitude: Number(payload.location.latitude),
+      longitude: Number(payload.location.longitude),
+      precision: payload.location.precision || "place",
+      fallback: Boolean(payload.location.fallback),
+      notice: String(payload.location.notice || "")
+    };
+    resolvedOriginMemory = { query, result };
+    return result;
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error(t("locationResolutionFailed"));
+    throw new Error(error?.message || t("locationResolutionFailed"));
+  } finally {
+    clearTimeout(timer);
   }
-
-  const threshold = Math.max(requestedMinimum, relaxed ? RELAXED_CV_MATCH_SCORE : STRICT_CV_MATCH_SCORE);
-  const hasTypedRole = Boolean(meaningfulTokens(typedRole).length);
-  const requiredEvidence = relaxed ? 1 : 2;
-  return scored.filter((job) => {
-    const match = Number(job.match || 0);
-    if (match < threshold) {
-      return false;
-    }
-    if (Number(job.evidenceCount || 0) < requiredEvidence) {
-      return false;
-    }
-    if (hasTypedRole && !job.roleAligned && match < (relaxed ? 45 : 55)) {
-      return false;
-    }
-    if (hasTypedRole && !job.titleAligned && match < 50) {
-      return false;
-    }
-    return true;
-  });
 }
 
-async function fetchJobsForQuery({ query, location, radiusKm, days, remoteOnly, types }) {
+function coarseSearchLocation(location) {
+  const value = String(location || "").trim();
+  if (!value) return "";
+  const address = JobLogic.parseAddress(value);
+  if (address.postcode || address.city) return [address.postcode, address.city].filter(Boolean).join(" ");
+  const streetMarker = /(?:straße|strasse|str\.?|weg|platz|allee|ring|gasse|damm|chaussee|ufer)/iu.test(value);
+  const hasHouseNumber = /\b\d{1,4}[a-z]?\b/i.test(value.replace(/\b\d{5}\b/g, ""));
+  if (streetMarker || hasHouseNumber) {
+    const postcodeCity = value.match(/\b\d{5}\s+[\p{L}][\p{L}\s.-]*$/u);
+    return postcodeCity ? postcodeCity[0].trim() : "";
+  }
+  return value
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function runWithConcurrency(items, limit, mapper) {
+  const output = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      try {
+        output[index] = { status: "fulfilled", value: await mapper(items[index], index) };
+      } catch (reason) {
+        output[index] = { status: "rejected", reason };
+      }
+    }
+  });
+  await Promise.all(workers);
+  return output;
+}
+
+async function fetchJobsForQuery({ query, location, radiusKm, days, remoteOnly, types, origin }) {
   const params = new URLSearchParams({
     q: query,
     location,
     radiusKm: String(radiusKm),
-    days: String(days),
+    days: String(Math.min(14, days)),
     remote: String(remoteOnly),
     types: types.join(",")
   });
-  const response = await fetch(`${JOBS_ENDPOINT}?${params.toString()}`, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Live job search failed with ${response.status}`);
+  if (origin) {
+    params.set("originLat", String(origin.latitude));
+    params.set("originLon", String(origin.longitude));
+    params.set("originPrecision", String(origin.precision || "place"));
+    params.set("originFallback", String(Boolean(origin.fallback)));
+    params.set("originNotice", String(origin.notice || ""));
   }
-  return response.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const response = await fetch(`${JOBS_ENDPOINT}?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(payload.error || `Live job search failed with ${response.status}.`);
+      error.sourceFailures = payload.sourceFailures || {};
+      throw error;
+    }
+    return payload;
+  } catch (error) {
+    if (error?.name === "AbortError") throw new Error("A live search request timed out. No wider search was run.");
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function formatSearchStatus(result, criteria, cvText) {
+  const sources = result.sourcesWithMatches.join(" + ") || "none";
+  const audit = t("sourceAudit", {
+    responded: result.sourcesQueried.join(", ") || "none",
+    matching: result.sourcesWithMatches.join(", ") || "none",
+    failed: result.sourceFailures.join(", ") || "none"
+  });
+  const latestGeneratedAt = result.payloads.map((payload) => payload.generatedAt).filter(Boolean).sort().at(-1) || new Date().toISOString();
+  const count = result.jobs.length;
+  let status;
+  if (count) {
+    status = t(cvText ? "autoJobsLoaded" : "liveJobsLoaded", {
+      count,
+      roleWord: count === 1 ? t("roleWordOne") : t("roleWordMany"),
+      sources,
+      time: new Date(latestGeneratedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    });
+  } else if (result.sourceFailures.length || result.requestFailures.length) {
+    status = t("noResultsWithSourceFailures");
+  } else {
+    status = t("noStrictMatches", { days: Math.min(14, criteria.days) });
+  }
+  status += ` ${audit}`;
+  if (result.sourceFailures.length) status += ` ${t("partialSourceFailure", { sources: result.sourceFailures.join(", ") })}`;
+  if (result.requestFailures.length) status += ` ${t("partialQueryFailure", { count: result.requestFailures.length })}`;
+  if (result.unverifiedWorkplaces) status += ` ${t("strictUnverifiedPlaces", { count: result.unverifiedWorkplaces })}`;
+  if (result.locationResolution?.fallback) status += ` ${t("originFallbackNotice", { precision: result.locationResolution.precision })}`;
+  if (criteria.remoteOnly) status += ` ${t("remoteDistanceNotice")}`;
+  if (cvText && !result.jobs.some((job) => Number(job.match) >= 85)) status += ` ${t("noHighMatches", { days: Math.min(14, criteria.days) })}`;
+  return status;
 }
 
 function mergeJobs(jobs) {
@@ -1143,79 +1102,56 @@ function mergeJobs(jobs) {
     }
     const combinedTags = unique([...(existing.tags || []), ...(job.tags || [])]);
     const combinedTypes = unique([...(existing.jobTypes || []), ...(job.jobTypes || [])]);
-    byKey.set(key, {
-      ...existing,
-      ...job,
-      tags: combinedTags,
-      jobTypes: combinedTypes,
-      jobTypeLabels: combinedTypes.map(jobTypeLabel)
-    });
+    byKey.set(key, { ...existing, ...job, tags: combinedTags, jobTypes: combinedTypes });
   });
   return [...byKey.values()];
 }
 
 function buildManualSearchQueries(role) {
   const base = cleanRoleQuery(role);
-  const expansions = MANUAL_QUERY_EXPANSIONS
-    .filter((entry) => entry.test.test(base))
-    .flatMap((entry) => entry.queries);
-  return unique([base, ...expansions])
-    .filter(Boolean)
-    .slice(0, 6);
+  const expansions = MANUAL_QUERY_EXPANSIONS.filter((entry) => entry.test.test(base)).flatMap((entry) => entry.queries);
+  return unique([base, ...expansions]).filter(Boolean).slice(0, 6);
 }
 
 function cleanRoleQuery(role) {
   return String(role || "").trim().replace(/\s+/g, " ");
 }
 
+function prepareExternalSearchConfig(criteria, queries, cvText) {
+  const profile = cvText ? JobLogic.extractCvProfile(cvText) : null;
+  const categoryTerms = {
+    service: "Servicekraft",
+    kitchen: "Küchenhilfe",
+    housekeeping: "Housekeeping",
+    warehouse: "Lagerhelfer",
+    retail: "Warenverräumung",
+    production: "Produktionshelfer"
+  };
+  const parsed = JobLogic.parseAddress(criteria.location || "");
+  const profileAddress = profile?.address || null;
+  const city = parsed.city || profileAddress?.city || "";
+  const postcode = parsed.postcode || profileAddress?.postcode || "";
+  const coarseLocation = [postcode, city].filter(Boolean).join(" ") || coarseSearchLocation(criteria.location) || "";
+  const cvRoles = (profile?.categories || []).map((category) => categoryTerms[category]).filter(Boolean);
+  const roles = unique([...(criteria.role ? [criteria.role, ...(queries || []).slice(1)] : cvRoles.length ? cvRoles : (queries || []))])
+    .map((role) => String(role || "").trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  return {
+    roles,
+    location: coarseLocation,
+    city: city || coarseLocation,
+    postcode,
+    radiusKm: Math.max(0, Number(criteria.radiusKm) || 0),
+    days: Math.min(14, Math.max(1, Number(criteria.days) || 14)),
+    types: Array.isArray(criteria.types) ? [...criteria.types] : [],
+    student: Boolean(profile?.student),
+    hoursPerWeek: profile?.hoursPerWeekDuringSemester ?? null
+  };
+}
+
 function deriveAutoSearchQueries(cvText) {
-  const primaryRole = derivePrimaryCvRole(cvText);
-  const primaryRoleQueries = primaryRole ? buildManualSearchQueries(primaryRole) : [];
-  const text = cvText.toLowerCase();
-  const cvWords = new Set(meaningfulTokens(cvText));
-  const matchingTitles = HIGH_FREQUENCY_GERMANY_JOB_TITLES.filter((title) => {
-    return titleMatchesCv(title, cvWords, text);
-  });
-  const keywords = getImportantKeywords(cvText, []).slice(0, 8);
-  const keywordQueries = primaryRoleQueries.length
-    ? []
-    : keywords.filter((keyword) => keyword.length > 3 && !isStudentIntentWord(keyword));
-  const matchingTitleQueries = primaryRoleQueries.length ? [] : matchingTitles;
-  const fallbackQueries = primaryRoleQueries.length ? [] : AUTO_FALLBACK_QUERIES;
-  return unique([
-    ...primaryRoleQueries,
-    ...matchingTitleQueries,
-    ...keywordQueries,
-    ...fallbackQueries
-  ]).slice(0, 12);
-}
-
-function derivePrimaryCvRole(cvText) {
-  const text = String(cvText || "");
-  const lower = text.toLowerCase();
-  const expansionMatch = MANUAL_QUERY_EXPANSIONS.find((entry) => entry.test.test(lower));
-  if (expansionMatch) {
-    return expansionMatch.queries[0];
-  }
-  const cvWords = new Set(meaningfulTokens(text));
-  const matchingTitles = HIGH_FREQUENCY_GERMANY_JOB_TITLES.filter((title) => {
-    return titleMatchesCv(title, cvWords, lower);
-  });
-  const title = matchingTitles[0];
-  if (title) {
-    return title;
-  }
-  const keyword = getImportantKeywords(text, []).find((word) => !isStudentIntentWord(word));
-  return keyword || "";
-}
-
-function titleMatchesCv(title, cvWords, cvText) {
-  const words = meaningfulTokens(title);
-  const hits = words.filter((word) => cvWords.has(word) || (word.length > 8 && cvText.includes(word))).length;
-  if (words.length <= 1) {
-    return hits > 0 && words.some((word) => word.length >= 9);
-  }
-  return hits >= Math.min(2, words.length);
+  return JobLogic.getCvSearchQueries(cvText);
 }
 
 function languageLabel(job) {
@@ -1356,41 +1292,47 @@ function jobMatchesAlert(job, criteria = {}) {
 }
 
 function scoreJobs(jobs, criteria = getCurrentSearchCriteria()) {
-  return jobs
-    .map((job) => {
-      const analysis = analyzeJobAgainstCv(job, criteria);
-      return { ...job, ...analysis, languageRequirement: job.languageRequirement || detectLanguageRequirement(job) };
-    })
-    .sort((a, b) => {
-      const weightedDiff = weightedMatchValue(b, criteria) - weightedMatchValue(a, criteria);
-      if (weightedDiff) {
-        return weightedDiff;
-      }
-      const scoreDiff = Number(b.match || 0) - Number(a.match || 0);
-      if (scoreDiff) {
-        return scoreDiff;
-      }
-      return new Date(b.postedAt || 0) - new Date(a.postedAt || 0);
-    });
+  const cvText = cvMemory?.text?.trim() || "";
+  if (!cvText) {
+    return jobs.map((job) => ({
+      ...job,
+      match: null,
+      successRate: null,
+      strengths: [],
+      missing: [],
+      recommendations: [],
+      roleAligned: true,
+      titleAligned: true,
+      evidenceCount: 0,
+      mandatoryIssues: [],
+      studentFitScore: 0,
+      languageRequirement: job.languageRequirement || detectLanguageRequirement(job)
+    })).sort((a, b) => JobLogic.compareRank(a, b));
+  }
+  const profile = JobLogic.extractCvProfile(cvText);
+  return jobs.map((job) => ({
+    ...job,
+    ...JobLogic.matchJobToProfile(job, profile),
+    studentFitScore: JobLogic.studentSuitabilityScore(job, profile),
+    successRate: null,
+    languageRequirement: job.languageRequirement || detectLanguageRequirement(job)
+  })).sort((a, b) => JobLogic.compareRank(a, b));
 }
 
-function weightedMatchValue(job, criteria = {}) {
-  let value = Number(job.match || 0);
-  const radius = Number(criteria.radiusKm || 0);
-  if (radius && Number.isFinite(job.distanceKm)) {
-    const distanceRatio = Math.min(1, Math.max(0, Number(job.distanceKm) / radius));
-    value += Math.round((1 - distanceRatio) * 24);
-    if (Number(job.distanceKm) <= 30) {
-      value += 6;
-    } else if (Number(job.distanceKm) <= 75) {
-      value += 3;
-    }
-  }
-  return value;
+function analyzeJobAgainstCv(job) {
+  const cvText = cvMemory?.text?.trim() || "";
+  if (!cvText) return { match: null, successRate: null, strengths: [], missing: [], recommendations: [t("noCvRecommendation")] };
+  const analysis = JobLogic.matchJobToProfile(job, JobLogic.extractCvProfile(cvText));
+  return { ...analysis, successRate: analysis.match };
 }
 
 function refreshScoredJobs() {
   if (!lastResults.length) {
+    renderDashboard();
+    return;
+  }
+  if (!cvMemory?.text?.trim()) {
+    renderJobs(lastResults);
     renderDashboard();
     return;
   }
@@ -1399,156 +1341,164 @@ function refreshScoredJobs() {
   renderDashboard();
 }
 
-function analyzeJobAgainstCv(job, criteria = {}) {
-  const rawCv = `${cvMemory?.name || ""} ${cvMemory?.text || ""}`;
-  const rawJob = `${job.title} ${job.company} ${job.location} ${job.summary} ${job.description} ${(job.tags || []).join(" ")}`;
-  const cvText = rawCv.toLowerCase();
-  const jobText = rawJob.toLowerCase();
-  const titleText = String(job.title || "").toLowerCase();
-  const cvConcepts = new Set(expandRoleWords(meaningfulTokens(rawCv)));
-  const jobConcepts = new Set(expandRoleWords(meaningfulTokens(rawJob)));
-  const titleConcepts = new Set(expandRoleWords(meaningfulTokens(job.title)));
-  const cvKeywords = getImportantKeywords(rawCv, []).slice(0, 22);
-  const jobKeywords = getImportantKeywords(rawJob, job.tags || []);
-  const roleWords = meaningfulTokens(criteria.role || "");
-  const roleGroups = getRoleTokenGroups(criteria.role || "");
-  const specialistRoleGroups = roleGroups.filter((group, index) => !isStudentIntentWord(roleWords[index]));
-
-  if (!cvText.trim()) {
-    return {
-      match: null,
-      successRate: null,
-      strengths: [],
-      missing: jobKeywords.slice(0, 8),
-      recommendations: [t("noCvRecommendation")],
-      roleAligned: true,
-      titleAligned: true,
-      evidenceCount: 0
-    };
-  }
-
-  const matchedCvKeywords = cvKeywords.filter((word) => matchesConcept(word, jobText, jobConcepts));
-  const matchedJobKeywords = jobKeywords.filter((word) => matchesConcept(word, cvText, cvConcepts));
-  const missing = jobKeywords.filter((word) => !matchesConcept(word, cvText, cvConcepts));
-  const titleHits = meaningfulTokens(job.title).filter((word) => matchesConcept(word, cvText, cvConcepts)).length;
-  const roleGroupHits = roleGroups.filter((group) => groupMatchesText(group, jobText, jobConcepts));
-  const roleTitleHits = roleGroups.filter((group) => groupMatchesText(group, titleText, titleConcepts)).length;
-  const specialistRoleHits = specialistRoleGroups.filter((group) => groupMatchesText(group, jobText, jobConcepts)).length;
-  const specialistTitleHits = specialistRoleGroups.filter((group) => groupMatchesText(group, titleText, titleConcepts)).length;
-  const specialistAligned = !specialistRoleGroups.length || specialistRoleHits === specialistRoleGroups.length;
-  const titleAligned = !specialistRoleGroups.length || specialistTitleHits > 0;
-  const roleCoverage = roleGroups.length ? roleGroupHits.length / roleGroups.length : 1;
-  const roleAligned = specialistAligned && (!roleGroups.length || roleCoverage >= 0.5 || roleTitleHits > 0);
-  const cvCoverage = Math.min(1, matchedCvKeywords.length / Math.max(1, Math.min(cvKeywords.length, 14)));
-  const jobCoverage = Math.min(1, matchedJobKeywords.length / Math.max(1, Math.min(jobKeywords.length, 14)));
-  const evidenceCount = unique([...matchedCvKeywords, ...matchedJobKeywords]).length + titleHits + roleGroupHits.length;
-
-  let score = Math.round(
-    Math.min(35, cvCoverage * 35) +
-    Math.min(25, jobCoverage * 25) +
-    Math.min(20, titleHits * 5 + roleTitleHits * 8) +
-    Math.min(14, roleCoverage * 14)
-  );
-  if (roleGroups.length && !roleAligned) {
-    score = Math.min(score, 32);
-  }
-  if (evidenceCount < 2) {
-    score = Math.min(score, 29);
-  }
-  const cvHasDrivingLicense = /(führerschein|fuehrerschein|fahrerlaubnis|driving licence|driving license|class b|klasse b|klasse c|klasse ce|\bc1\b|\bce\b)/i.test(cvText);
-  const cvHasHeavyDriving = /(lkw|truck|berufskraftfahrer|klasse c|klasse ce|\bc1\b|\bce\b|7[,.]5\s?t)/i.test(cvText);
-  const jobNeedsLicense = /(führerschein|fuehrerschein|fahrerlaubnis|driving licence|driving license|class b|klasse b)/i.test(jobText);
-  const jobNeedsHeavyDriving = /(lkw|truck|berufskraftfahrer|klasse c|klasse ce|\bc1\b|\bce\b|7[,.]5\s?t)/i.test(jobText);
-  if (jobNeedsHeavyDriving && !cvHasHeavyDriving) {
-    score = Math.min(score, 38);
-    missing.unshift("heavy vehicle license");
-  } else if (jobNeedsLicense && !cvHasDrivingLicense) {
-    score = Math.min(score, 46);
-    missing.unshift("driving license");
-  }
-  score = Math.max(0, Math.min(100, score));
-  const matched = unique([...matchedCvKeywords, ...matchedJobKeywords]);
-  const recommendations = makeRecommendations(job, matched, missing, score);
-
-  return {
-    match: score,
-    successRate: score,
-    strengths: matched.slice(0, 8),
-    missing: missing.slice(0, 10),
-    recommendations,
-    roleAligned,
-    titleAligned,
-    evidenceCount
-  };
-}
-
-function getImportantKeywords(text, tags) {
-  const words = meaningfulTokens(text);
-  const counts = new Map();
-  words.forEach((word) => counts.set(word, (counts.get(word) || 0) + 1));
-  const tagWords = tags.flatMap((tag) => meaningfulTokens(tag));
-  tagWords.forEach((word) => counts.set(word, (counts.get(word) || 0) + 5));
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([word]) => word)
-    .slice(0, 18);
-}
-
-function makeRecommendations(job, matched, missing, score) {
-  const topMissing = missing.slice(0, 5);
-  const lines = [];
-  if (topMissing.length) {
-    lines.push(t("addEvidence", { keywords: topMissing.join(", ") }));
-  }
-  if (matched.length) {
-    lines.push(t("keepStrengths", { strengths: matched.slice(0, 5).join(", ") }));
-  }
-  lines.push(t("mirrorTitle", { title: job.title }));
-  lines.push(t("addMeasurable"));
-  if (score < 70) {
-    lines.push(t("rewriteProfile"));
-  } else {
-    lines.push(t("improveCover"));
-  }
-  return lines;
-}
-
-function tokenize(text) {
-  return [...new Set(String(text).toLowerCase().split(/[^a-z0-9äöüß]+/i).filter(Boolean))];
-}
-
-function meaningfulTokens(text) {
-  return tokenize(text)
-    .filter((word) => word.length > 2 && !MATCH_STOP_WORDS.has(word))
-    .filter((word) => !/^\d+$/.test(word));
-}
-
-function expandRoleWords(words) {
-  return unique(words.flatMap((word) => [word, ...(ROLE_WORD_SYNONYMS[word] || [])]));
-}
-
-function getRoleTokenGroups(role) {
-  return meaningfulTokens(role).map((word) => unique([word, ...(ROLE_WORD_SYNONYMS[word] || [])]));
-}
-
-function matchesConcept(word, text, conceptSet) {
-  return conceptGroup(word).some((term) => conceptSet.has(term) || text.includes(term));
-}
-
-function groupMatchesText(group, text, conceptSet) {
-  return group.some((word) => conceptSet.has(word) || text.includes(word));
-}
-
-function conceptGroup(word) {
-  return unique([word, ...(ROLE_WORD_SYNONYMS[word] || [])]);
-}
-
-function isStudentIntentWord(word) {
-  return /^(student|students|werkstudent|studentenjob|praktikum|internship|intern|aushilfe|minijob|teilzeit|nebenjob|hiwi)$/.test(word);
-}
-
 function unique(values) {
   return [...new Set(values.filter(Boolean))];
+}
+
+function distanceForDisplay(job) {
+  const distance = Number(job.distanceKm);
+  if (!Number.isFinite(distance)) return "";
+  const value = Number.isInteger(distance) ? String(distance) : distance.toFixed(1);
+  return `${job.distanceApproximate ? "≈ " : ""}${value}`;
+}
+
+function externalSlug(value) {
+  return String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function externalQueryForTypes(config) {
+  const types = (config.types || []).map((type) => String(type).toLowerCase());
+  const labels = [];
+  if (types.some((type) => type.includes("part"))) labels.push("Teilzeit");
+  if (types.some((type) => type.includes("student"))) labels.push("Studentenjob");
+  if (types.some((type) => type.includes("mini"))) labels.push("Minijob");
+  if (types.some((type) => type.includes("full"))) labels.push("Vollzeit");
+  if (config.student && !types.length) labels.push("Studentenjob", "Teilzeit", "Minijob");
+  return unique(labels);
+}
+
+function externalPlatformUrl(platform, role, config) {
+  const term = String(role || "").trim();
+  const city = config.city || config.location || "";
+  const location = config.location || city;
+  const radius = config.radiusKm > 0 ? String(config.radiusKm) : "";
+  const roleAndTypes = [term, ...externalQueryForTypes(config)].filter(Boolean).join(" ");
+  const params = new URLSearchParams();
+  if (platform === "kleinanzeigen") {
+    const placeIds = { leipzig: "4233", berlin: "3331", hamburg: "9409" };
+    const placeId = placeIds[externalSlug(city)];
+    if (placeId) {
+      const radiusPart = radius ? `r${radius}` : "";
+      return `https://www.kleinanzeigen.de/s-jobs/${externalSlug(city)}/${externalSlug(roleAndTypes)}/k0c102l${placeId}${radiusPart}`;
+    }
+    params.set("keywords", [roleAndTypes, location].filter(Boolean).join(" "));
+    return `https://www.kleinanzeigen.de/s-jobs/${externalSlug(roleAndTypes)}/c102?${params.toString()}`;
+  }
+  if (platform === "indeed") {
+    params.set("q", roleAndTypes || term);
+    if (location) params.set("l", location);
+    if (radius) params.set("radius", radius);
+    params.set("fromage", String(config.days || 14));
+    const selectedTypes = (config.types || []).map((type) => String(type).toLowerCase());
+    if (!selectedTypes.some((type) => type.includes("full")) && (config.student || selectedTypes.some((type) => /part|student|mini/.test(type)))) params.set("jt", "parttime");
+    return `https://de.indeed.com/jobs?${params.toString()}`;
+  }
+  if (platform === "studentjob") {
+    params.set("search[keywords_scope]", term);
+    if (config.postcode) params.set("search[zipcode_eq]", config.postcode);
+    if (city) params.set("region_name", city);
+    const types = (config.types || []).map((type) => String(type).toLowerCase());
+    const jobTypeIds = [];
+    if (config.student && !types.length) jobTypeIds.push("9", "2", "12", "4");
+    else {
+      if (types.some((type) => type.includes("student"))) jobTypeIds.push("9");
+      if (types.some((type) => type.includes("part"))) jobTypeIds.push("2");
+      if (types.some((type) => type.includes("mini"))) jobTypeIds.push("12", "4");
+    }
+    unique(jobTypeIds).forEach((id) => params.append("search[job_types][id][]", id));
+    return `https://www.studentjob.de/stellenangebote?${params.toString()}`;
+  }
+  if (platform === "stepstone") {
+    const path = city ? `/jobs/${externalSlug(roleAndTypes || term)}/in-${externalSlug(city)}` : `/jobs/${externalSlug(roleAndTypes || term)}`;
+    if (radius) params.set("radius", radius);
+    return `https://www.stepstone.de${path}${params.size ? `?${params.toString()}` : ""}`;
+  }
+  if (platform === "zenjob") {
+    params.set("search", roleAndTypes || term);
+    if (city) params.set("city", city);
+    return `https://www.zenjob.com/de/jobboerse?${params.toString()}`;
+  }
+  if (platform === "jobvalley") {
+    params.set("search", roleAndTypes || term);
+    if (city) params.set("location", city);
+    return `https://jobvalley.com/de-de/jobs?${params.toString()}`;
+  }
+  return "https://www.google.com/";
+}
+
+function appendExternalSearchPanel(list) {
+  const config = lastExternalSearchConfig;
+  if (!config?.roles?.length) return;
+  const primaryPlatforms = [
+    ["kleinanzeigen", "Kleinanzeigen"],
+    ["indeed", "Indeed Germany"],
+    ["studentjob", "StudentJob"],
+    ["stepstone", "StepStone"],
+    ["zenjob", "Zenjob"],
+    ["jobvalley", "jobvalley"]
+  ];
+  const additionalSites = [
+    ["Jobmensa", "jobmensa.de"],
+    ["Stellenwerk", "stellenwerk.de"],
+    ["YoungCapital", "youngcapital.de"],
+    ["JOBRUF", "jobruf.de"],
+    ["meinestadt.de", "jobs.meinestadt.de"],
+    ["NebenJob.de", "nebenjob.de"],
+    ["aushilfsjobs.info", "aushilfsjobs.info"],
+    ["Workwise", "workwise.io"],
+    ["Universität Leipzig", "uni-leipzig.de"],
+    ["HTWK Leipzig", "htwk-leipzig.de"],
+    ["Studentenwerk Leipzig", "studentenwerk-leipzig.de"]
+  ];
+  const roleOptions = config.roles.length > 1
+    ? `<label class="external-role-filter"><span>${escapeHtml(t("externalSearchRole"))}</span><select data-external-role>${config.roles.map((role, index) => `<option value="${escapeAttribute(role)}"${index === 0 ? " selected" : ""}>${escapeHtml(role)}</option>`).join("")}</select></label>`
+    : "";
+  const panel = document.createElement("section");
+  panel.className = "panel external-platform-searches";
+  panel.innerHTML = `
+    <div class="external-search-head">
+      <div><h3>${escapeHtml(t("externalSearchTitle"))}</h3><p>${escapeHtml(t("externalSearchNote"))}</p></div>
+      ${roleOptions}
+    </div>
+    <div class="external-platform-links" data-primary-platforms></div>
+    <details class="external-more"><summary>${escapeHtml(t("externalMore"))}</summary><div class="external-platform-links" data-additional-platforms></div></details>
+  `;
+  const roleSelect = panel.querySelector("[data-external-role]");
+  const selectedRole = roleSelect?.value || config.roles[0];
+  const primaryContainer = panel.querySelector("[data-primary-platforms]");
+  primaryContainer.innerHTML = primaryPlatforms.map(([id, label]) => `<a class="quiet-button" target="_blank" rel="noopener noreferrer" data-platform-search="${id}">${escapeHtml(t("externalSearchButton", { platform: label }))}</a>`).join("");
+  const additionalContainer = panel.querySelector("[data-additional-platforms]");
+  const googleLinks = additionalSites.map(([label, domain]) => {
+    const search = `site:${domain} ${selectedRole} ${config.location} ${externalQueryForTypes(config).join(" ")}`.trim();
+    const href = `https://www.google.com/search?${new URLSearchParams({ q: search, tbs: "qdr:d14" })}`;
+    return `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="${escapeAttribute(href)}">${escapeHtml(t("externalSearchButton", { platform: `Google · ${label}` }))}</a>`;
+  });
+  const employerQuery = `${selectedRole} ${config.location} Jobs Karriere Arbeitgeber`;
+  const generalQuery = `${selectedRole} ${config.location} Stellenangebot ${externalQueryForTypes(config).join(" ")}`.trim();
+  googleLinks.push(`<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: employerQuery, tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · local employer careers" }))}</a>`);
+  googleLinks.push(`<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: generalQuery, tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · indexed vacancies (14 days)" }))}</a>`);
+  additionalContainer.innerHTML = googleLinks.join("");
+  list.appendChild(panel);
+
+  const updatePlatformLinks = (role) => {
+    panel.querySelectorAll("[data-platform-search]").forEach((anchor) => {
+      anchor.href = externalPlatformUrl(anchor.dataset.platformSearch, role, config);
+    });
+  };
+  updatePlatformLinks(selectedRole);
+  roleSelect?.addEventListener("change", () => {
+    const role = roleSelect.value;
+    updatePlatformLinks(role);
+    additionalContainer.innerHTML = additionalSites.map(([label, domain]) => {
+      const search = `site:${domain} ${role} ${config.location} ${externalQueryForTypes(config).join(" ")}`.trim();
+      const href = `https://www.google.com/search?${new URLSearchParams({ q: search, tbs: "qdr:d14" })}`;
+      return `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="${escapeAttribute(href)}">${escapeHtml(t("externalSearchButton", { platform: `Google · ${label}` }))}</a>`;
+    }).concat([
+      `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: `${role} ${config.location} Jobs Karriere Arbeitgeber`, tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · local employer careers" }))}</a>`,
+      `<a class="quiet-button" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?${new URLSearchParams({ q: `${role} ${config.location} Stellenangebot ${externalQueryForTypes(config).join(" ")}`.trim(), tbs: "qdr:d14" })}">${escapeHtml(t("externalSearchButton", { platform: "Google · indexed vacancies (14 days)" }))}</a>`
+    ]).join("");
+  });
 }
 
 function renderJobs(jobs, options = {}) {
@@ -1558,6 +1508,7 @@ function renderJobs(jobs, options = {}) {
   if (options.loading) {
     $("#resultCount").textContent = t("searching");
     list.innerHTML = `<div class="panel empty-feed">${escapeHtml(t("searchingBoards"))}</div>`;
+    appendExternalSearchPanel(list);
     return;
   }
 
@@ -1572,6 +1523,7 @@ function renderJobs(jobs, options = {}) {
         <p>${escapeHtml(t("emptyFeedBody"))}</p>
       </div>
     `;
+    appendExternalSearchPanel(list);
     return;
   }
 
@@ -1581,7 +1533,7 @@ function renderJobs(jobs, options = {}) {
     card.innerHTML = `
       <div class="job-card-head">
         <div>
-          <span class="source-line">${escapeHtml(job.source)} | ${formatDate(job.postedAt)}${job.remote ? ` | ${t("remote")}` : ""}</span>
+          <span class="source-line">${escapeHtml(job.source)} | ${escapeHtml(t("originallyPublished"))}: ${formatDate(job.publishedAtOriginal || job.postedAt)}${job.remote ? ` | ${t("remote")}` : ""}</span>
           <h3>${escapeHtml(job.title)}</h3>
           <p>${escapeHtml(job.company)} | ${escapeHtml(job.location || t("locationNotListed"))}</p>
         </div>
@@ -1594,7 +1546,7 @@ function renderJobs(jobs, options = {}) {
         <span class="tag match">${job.match == null ? t("cvNeeded") : t("percentMatch", { score: job.match })}</span>
         <span class="tag source">${escapeHtml(job.interestLabel || t("interestNotPublished"))}</span>
         <span class="tag language">${escapeHtml(t("languageRequired"))}: ${escapeHtml(languageLabel(job))}</span>
-        ${Number.isFinite(job.distanceKm) ? `<span class="tag">${escapeHtml(t("distanceAway", { distance: job.distanceKm }))}</span>` : ""}
+        ${Number.isFinite(job.distanceKm) ? `<span class="tag">${escapeHtml(t("distanceAway", { distance: distanceForDisplay(job) }))}</span>` : ""}
         ${job.salary ? `<span class="tag">${escapeHtml(job.salary)}</span>` : ""}
         ${(job.jobTypes || []).slice(0, 3).map((type) => `<span class="tag">${escapeHtml(jobTypeLabel(type))}</span>`).join("")}
         ${(job.tags || []).slice(0, 5).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
@@ -1624,6 +1576,7 @@ function renderJobs(jobs, options = {}) {
   $$("[data-cover-job]").forEach((button) => {
     button.addEventListener("click", () => openCoachForJob(button.dataset.coverJob, "cover"));
   });
+  appendExternalSearchPanel(list);
 }
 
 function openCoachForJob(jobId, mode) {
@@ -1765,6 +1718,7 @@ function generateCoachOutput(mode, job = selectedJob) {
   const role = $("#targetRole").value.trim() || job?.title || "target role";
   const company = $("#targetCompany").value.trim() || job?.company || "the company";
   const requirements = $("#targetRequirements").value.trim() || job?.description || "";
+  const profile = cvMemory?.text?.trim() ? JobLogic.extractCvProfile(cvMemory.text) : null;
   const analysis = job ? analyzeJobAgainstCv({ ...job, description: requirements, title: role, company }, { role }) : analyzeJobAgainstCv({
     title: role,
     company,
@@ -1774,7 +1728,7 @@ function generateCoachOutput(mode, job = selectedJob) {
     tags: []
   }, { role });
   const recommendations = buildRecommendationText(role, company, analysis);
-  const cover = buildCoverLetter(role, company, requirements, analysis);
+  const cover = JobLogic.buildGermanCoverLetter({ role, company, analysis, profile });
 
   if (mode === "cover") {
     $("#resumeOutput").value = cover;
@@ -1799,34 +1753,6 @@ function buildRecommendationText(role, company, analysis) {
     "",
     t("matchingEvidence"),
     analysis.strengths?.length ? analysis.strengths.slice(0, 8).map((word) => `- ${word}`).join("\n") : `- ${t("addCvToDetect")}`
-  ].join("\n");
-}
-
-function buildCoverLetter(role, company, requirements, analysis) {
-  const strengths = analysis.strengths?.slice(0, 4).join(", ") || "my relevant experience";
-  const missing = analysis.missing?.slice(0, 3).join(", ");
-  const cvLine = cvMemory?.text
-    ? t("coverCvLine", { strengths })
-    : t("coverNoCvLine");
-  const improvementLine = missing
-    ? t("coverMissingLine", { missing })
-    : t("coverNoMissingLine");
-
-  return [
-    t("coverDraftTitle", { role, company }),
-    "",
-    t("dearHiringTeam"),
-    "",
-    t("coverIntro", { role, company, line: cvLine }),
-    "",
-    t("coverAttraction", { line: improvementLine }),
-    "",
-    t("coverClose"),
-    "",
-    t("kindRegards"),
-    t("yourName"),
-    "",
-    requirements ? t("beforeSending") : t("pasteFullJob")
   ].join("\n");
 }
 
