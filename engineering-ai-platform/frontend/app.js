@@ -96,6 +96,8 @@ function createScene() {
   camera = new THREE.PerspectiveCamera(42, 1, .1, 100); camera.position.set(16, 12, 18);
   orthoCamera = new THREE.OrthographicCamera(-10, 10, 7, -7, .1, 100); orthoCamera.position.copy(camera.position);
   try {
+    const probe = document.createElement('canvas');
+    if (!probe.getContext('webgl2') && !probe.getContext('webgl')) throw new Error('WebGL unavailable');
     renderer = new THREE.WebGLRenderer({ canvas: $('modelCanvas'), antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; renderer.localClippingEnabled = true;
     controls = new OrbitControls(camera, renderer.domElement); controls.target.set(0, 3.2, 0); controls.enableDamping = true; controls.dampingFactor = .06; controls.minDistance = 7; controls.maxDistance = 35; controls.maxPolarAngle = Math.PI * .48;
