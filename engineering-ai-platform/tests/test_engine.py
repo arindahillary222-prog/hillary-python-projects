@@ -13,3 +13,10 @@ def test_beam_screen():
 def test_assistant_routes_without_fabricating_numbers():
     d=client.post('/api/assistant/route',json={'message':'compare a battery for solar'}).json()
     assert d['tool']=='solar_screen' and 'language model' in d['grounding']
+
+def test_frontend_serves_same_origin():
+    r=client.get('/')
+    assert r.status_code==200 and 'AxiomForge' in r.text
+
+def test_empty_chat_is_rejected():
+    assert client.post('/api/assistant/chat', json={'message':''}).status_code==400
