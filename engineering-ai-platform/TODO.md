@@ -14,4 +14,5 @@
 - [ ] Add secure file management and import/export for CSV, XLSX, PDF, IFC, GLB, GeoJSON, and time series.
 - [ ] Integrate validated pvlib/SAM workflows, IFC inspection, process balances, project schedules, and report generation.
 - [ ] Add provider-independent retrieval, citations, tool permissions, human approval gates, and AI evaluation.
-- [ ] Add production deployment, monitoring, backups, billing entitlements, privacy/legal review, and launch readiness evidence.
+- [ ] Add production monitoring, backups, billing entitlements, privacy/legal review, and launch readiness evidence.
+- [ ] Add original CAD/IFC import and comparison against the source drawing package before any approval-grade use.
