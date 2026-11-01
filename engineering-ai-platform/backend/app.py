@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from math import isfinite
+from math import isfinite, pi
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +25,22 @@ class BeamRequest(BaseModel):
     load_kn_m: float = Field(gt=0, le=10_000)
     elastic_modulus_gpa: float = Field(default=200, gt=0, le=1000)
     second_moment_cm4: float = Field(default=8333, gt=0, le=1e12)
+
+class WaterNetworkRequest(BaseModel):
+    reservoir_head_m: float = Field(default=30, gt=0, le=500)
+    demand_lps: float = Field(default=2.0, gt=0, le=1000)
+    pipe_length_m: float = Field(default=120, gt=0, le=10_000)
+    pipe_diameter_mm: float = Field(default=80, gt=1, le=2000)
+    roughness_c: float = Field(default=130, gt=1, le=200)
+    elevation_rise_m: float = Field(default=8, ge=-500, le=500)
+
+class AirflowRequest(BaseModel):
+    room_length_m: float = Field(default=5, gt=0, le=100)
+    room_width_m: float = Field(default=4, gt=0, le=100)
+    room_height_m: float = Field(default=3, gt=0, le=30)
+    air_changes_per_hour: float = Field(default=4, gt=0, le=100)
+    inlet_area_m2: float = Field(default=0.25, gt=0, le=100)
+    sensible_load_kw: float = Field(default=1.5, ge=0, le=1000)
 
 class CalculationRecord(BaseModel):
     calculation_id: str
@@ -66,6 +82,25 @@ def beam(req: BeamRequest):
     moment_knm = req.load_kn_m*req.span_m**2/8
     if not all(isfinite(x) for x in (delta_m,moment_knm)): raise HTTPException(400,"Non-finite result")
     return {"inputs":req.model_dump(),"outputs":{"maximum_deflection_mm":round(delta_m*1000,3),"maximum_moment_knm":round(moment_knm,3),"screening_ratio_span_over_deflection":round(req.span_m/(delta_m or 1),1)},"record":record("BEAM-SCREEN-001","Closed-form beam solver","Simply supported beam under uniform load",{"length":"m","load":"kN/m","deflection":"mm","moment":"kN·m"},["Prismatic member","Small deflection linear elastic theory","Ideal simple supports"],["Screening only; no code compliance","No lateral torsion, connections, buckling, fire, fatigue or load combinations"]).model_dump()}
+
+@app.post("/api/water/network")
+def water_network(req: WaterNetworkRequest):
+    # Hazen-Williams SI screening relation for a single pipe.
+    q = req.demand_lps / 1000
+    d = req.pipe_diameter_mm / 1000
+    headloss = 10.67 * req.pipe_length_m * (q ** 1.852) / ((req.roughness_c ** 1.852) * (d ** 4.871))
+    residual_head = req.reservoir_head_m - req.elevation_rise_m - headloss
+    velocity = q / (pi * d * d / 4)
+    status = "screening_pass" if residual_head > 0 else "screening_fail"
+    return {"inputs": req.model_dump(), "outputs": {"headloss_m": round(headloss,4), "residual_head_m": round(residual_head,4), "velocity_m_s": round(velocity,4), "flow_lps": req.demand_lps}, "record": record("WATER-NETWORK-001", "Hazen-Williams single-pipe screen", "h_f = 10.67 L Q^1.852 / (C^1.852 d^4.871)", {"flow":"L/s","head":"m","velocity":"m/s"}, ["Steady incompressible flow", "Single pipe with known demand", "Hazen-Williams roughness coefficient supplied by user"], ["Not a calibrated EPANET network", "No pump curve, minor losses, water quality or transient analysis"], status).model_dump()}
+
+@app.post("/api/airflow/room")
+def airflow_room(req: AirflowRequest):
+    volume = req.room_length_m * req.room_width_m * req.room_height_m
+    flow_m3_s = volume * req.air_changes_per_hour / 3600
+    velocity = flow_m3_s / req.inlet_area_m2
+    temperature_rise = (req.sensible_load_kw * 1000) / (1.2 * 1005 * flow_m3_s)
+    return {"inputs": req.model_dump(), "outputs": {"room_volume_m3": round(volume,3), "flow_m3_s": round(flow_m3_s,5), "inlet_velocity_m_s": round(velocity,4), "sensible_temperature_rise_c": round(temperature_rise,3)}, "record": record("AIRFLOW-ROOM-001", "Steady room air-change screen", "Q = volume × ACH / 3600; ΔT = load / (rho cp Q)", {"volume":"m³","flow":"m³/s","velocity":"m/s","temperature":"°C"}, ["Steady well-mixed room", "Air density 1.2 kg/m³", "Specific heat 1005 J/kg·K", "Uniform sensible load"], ["Not CFD", "No turbulence, buoyancy, geometry field, pressure boundary or transient solution"]).model_dump()}
 
 @app.post("/api/assistant/chat")
 async def assistant_chat(payload: dict):

@@ -20,3 +20,13 @@ def test_frontend_serves_same_origin():
 
 def test_empty_chat_is_rejected():
     assert client.post('/api/assistant/chat', json={'message':''}).status_code==400
+
+def test_water_network_benchmark_is_traceable():
+    r=client.post('/api/water/network',json={'reservoir_head_m':30,'demand_lps':2,'pipe_length_m':120,'pipe_diameter_mm':80,'elevation_rise_m':8})
+    assert r.status_code==200 and r.json()['outputs']['residual_head_m']>0
+    assert r.json()['record']['calculation_id']=='WATER-NETWORK-001'
+
+def test_airflow_room_benchmark_has_conservation_units():
+    r=client.post('/api/airflow/room',json={'room_length_m':5,'room_width_m':4,'room_height_m':3,'air_changes_per_hour':4,'inlet_area_m2':0.25,'sensible_load_kw':1.5})
+    assert r.status_code==200 and r.json()['outputs']['flow_m3_s']>0
+    assert r.json()['record']['units']['velocity']=='m/s'
