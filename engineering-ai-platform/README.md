@@ -1,29 +1,15 @@
-# AxiomForge — Engineering Intelligence Platform
+# AxiomForge — Hillary Engineering Software
 
-AxiomForge is the first working release of a multidisciplinary engineering intelligence workspace. It demonstrates a real, inspectable solar-and-battery screen, a real closed-form beam screen, traceable calculation records, explicit assumptions and limitations, and an assistant router that selects deterministic tools instead of inventing numerical results.
+AxiomForge is an evidence-first engineering workspace for inspectable models, deterministic calculations and multidisciplinary project coordination. The live application is available at [axiomforge-engineering.pages.dev](https://axiomforge-engineering.pages.dev/).
 
-## Permanent deployment
+## Current release
 
-Cloudflare Pages is configured to deploy the `frontend/` output and the production API under `functions/api/`. The Python FastAPI service remains the local/reference backend; Pages Functions provide same-origin production endpoints.
+Release 0.4 continues the WebGL BIM foundation and restores the complete professional navigation taxonomy. The Mbarara Smart Residence example is a provisional, editable reconstruction from written specifications: 12.00 m × 10.50 m, two storeys, 252 m² gross floor area, provisional 16° hipped roof and explicit not-construction-approved status.
 
-## Run locally
+Currently demonstrated: WebGL geometry inspection, architectural/technical display modes, component selection and metadata, perspective/orthographic views, floor visibility, section control, measurement, material presets, solver-backed solar screening and beam screening API records. The release also exposes module-specific workspaces for guided assistant routing, structural and clean-energy domain packs, data intake, analytics, code studio, terrain, manufacturing, project execution and system administration. Modules without a verified solver are marked roadmap or foundation rather than presented as complete.
 
-```bash
-cd backend
-python3 -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app:app --reload --port 8000
-```
+## Verification philosophy
 
-In another terminal, serve the frontend:
+AxiomForge separates calculated outputs, screening results, roadmap capabilities and professional approval. Numerical records retain inputs, units, solver, method, assumptions, status and limitations. Real source drawings, surveys, standards configuration and professional review are required before construction or operational decisions.
 
-```bash
-cd frontend
-python3 -m http.server 4173
-```
-
-Open `http://localhost:4173`. Run tests from the project root with `pytest -q` after installing the backend requirements.
-
-## Trust boundary
-
-This release is screening software, not a professional design approval or regulatory compliance certificate. Results retain inputs, units, method, solver version, assumptions, limitations, and status. Advanced simulation, persistence, authentication, billing, IFC, and production deployment remain explicitly tracked in `docs/` and the roadmap.
+See [ARCHITECTURE.md](ARCHITECTURE.md), [VALIDATION.md](VALIDATION.md), [TECHNOLOGIES.md](TECHNOLOGIES.md) and [docs/visualization-validation.md](docs/visualization-validation.md).

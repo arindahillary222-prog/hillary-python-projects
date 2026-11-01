@@ -11,12 +11,23 @@
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">A</span><span>AXIOM<span class="accent">FORGE</span></span></div>
-      <div class="sidebar-label">ENGINEERING WORKSPACES</div>
-      <button class="nav active" data-view="model">◈ BIM studio</button>
-      <button class="nav" data-view="energy">◒ Energy engineering</button>
-      <button class="nav" data-view="structure">⌗ Structural inspection</button>
-      <button class="nav" data-view="electrical">⌁ Electrical systems</button>
-      <button class="nav" data-view="projects">▦ Project controls</button>
+      <div class="sidebar-scroll">
+        <div class="nav-group"><div class="sidebar-label">GENERAL</div>
+          <button class="nav active" data-view="overview">⌂ Overview</button><button class="nav" data-view="assistant">✦ AI engineering assistant</button><button class="nav" data-view="new-project">＋ New project</button><button class="nav" data-view="projects">▦ My projects</button><button class="nav" data-view="import">⇧ Upload / import data</button><button class="nav" data-view="examples">◈ Example projects</button><button class="nav" data-view="analytics">▤ Universal data analytics</button>
+        </div>
+        <div class="nav-group"><div class="sidebar-label">ENGINEERING</div>
+          <button class="nav" data-view="structure">⌗ Civil & structural</button><button class="nav" data-view="mechanical">◫ Mechanical engineering</button><button class="nav" data-view="electrical">⌁ Electrical & power</button><button class="nav" data-view="chemical">◇ Chemical & process</button><button class="nav" data-view="energy">◒ Clean energy</button><button class="nav" data-view="environmental">♧ Environmental</button><button class="nav" data-view="water">⌁ Water & drainage</button><button class="nav" data-view="geotechnical">⌖ Geotechnical</button><button class="nav" data-view="materials">⬡ Materials</button><button class="nav" data-view="manufacturing">▦ Industrial & manufacturing</button><button class="nav" data-view="automation">⟳ Automation & control</button><button class="nav" data-view="infrastructure">▥ Infrastructure</button><button class="nav" data-view="model">◈ BIM / CAD studio</button><button class="nav" data-view="simulation">◌ 3D & scientific simulation</button><button class="nav" data-view="digital-twin">◉ Digital twins</button><button class="nav" data-view="predictive">↗ Predictive engineering</button>
+        </div>
+        <div class="nav-group"><div class="sidebar-label">MANAGEMENT & ANALYTICS</div>
+          <button class="nav" data-view="operations">▥ Operations intelligence</button><button class="nav" data-view="project-management">▣ Project management</button><button class="nav" data-view="coordination">⇄ Project coordination</button><button class="nav" data-view="business">◍ Business intelligence</button><button class="nav" data-view="research">∑ Research & statistics</button><button class="nav" data-view="finance">◒ Financial analysis</button><button class="nav" data-view="consulting">◎ Consulting</button><button class="nav" data-view="case-management">▤ Case management</button><button class="nav" data-view="risk">⚠ Risk management</button><button class="nav" data-view="resources">◫ Resource planning</button><button class="nav" data-view="manufacturing-management">▦ Manufacturing management</button>
+        </div>
+        <div class="nav-group"><div class="sidebar-label">PROFESSIONAL TOOLS</div>
+          <button class="nav" data-view="code">&lt;/&gt; Code studio</button><button class="nav" data-view="notebooks">▧ Engineering notebooks</button><button class="nav" data-view="solvers">∫ Formula & solver library</button><button class="nav" data-view="standards">▤ Engineering standards</button><button class="nav" data-view="terrain">⌖ Geographic & terrain</button><button class="nav" data-view="dashboards">▥ Charts & dashboards</button><button class="nav" data-view="connections">⇌ Data connections</button><button class="nav" data-view="reports">⇩ Reports & exports</button>
+        </div>
+        <div class="nav-group"><div class="sidebar-label">SYSTEM</div>
+          <button class="nav" data-view="organizations">◎ Organizations</button><button class="nav" data-view="teams">♧ Team collaboration</button><button class="nav" data-view="integrations">⇄ Integrations</button><button class="nav" data-view="settings">⚙ Account settings</button><button class="nav" data-view="admin">▣ Administration</button>
+        </div>
+      </div>
       <div class="sidebar-spacer"></div>
       <div class="api-state"><span class="online-dot"></span> API online<br><small>Release 0.3 · inspection build</small></div>
     </aside>
@@ -26,6 +37,7 @@
         <div class="top-actions"><span class="status-chip warning">PRELIMINARY DESIGN</span><span class="status-chip"><span class="online-dot"></span> SOLVER CONNECTED</span></div>
       </header>
       <section class="project-strip"><div><span class="strip-label">PROJECT REF</span><strong>MBR-26-001</strong></div><div><span class="strip-label">LOCATION</span><strong>Mbarara, Uganda</strong></div><div><span class="strip-label">MODEL BASIS</span><strong>Written brief · P02</strong></div><div><span class="strip-label">DIMENSIONS</span><strong>12.00 × 10.50 m</strong></div><div><span class="strip-label">GROSS FLOOR AREA</span><strong>252.00 m²</strong></div><div class="disclaimer">NOT CONSTRUCTION-APPROVED</div></section>
+      <section id="moduleWorkspace" class="module-workspace panel hidden"></section>
       <section class="studio-grid">
         <div class="viewer-panel panel">
           <div class="panel-toolbar"><div><span class="eyebrow">3D MODEL / BIM INSPECTION</span><h2 id="workspaceTitle">Architectural model</h2></div><div class="toolbar-actions"><button class="tool-button active" id="modeArchitectural">ARCH</button><button class="tool-button" id="modeTechnical">BIM</button><button class="tool-button" id="cameraToggle">PERSPECTIVE</button><button class="tool-button" id="resetView">RESET VIEW</button></div></div>
