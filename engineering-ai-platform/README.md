@@ -2,6 +2,10 @@
 
 AxiomForge is the first working release of a multidisciplinary engineering intelligence workspace. It demonstrates a real, inspectable solar-and-battery screen, a real closed-form beam screen, traceable calculation records, explicit assumptions and limitations, and an assistant router that selects deterministic tools instead of inventing numerical results.
 
+## Permanent deployment
+
+Cloudflare Pages is configured to deploy the `frontend/` output and the production API under `functions/api/`. The Python FastAPI service remains the local/reference backend; Pages Functions provide same-origin production endpoints.
+
 ## Run locally
 
 ```bash
