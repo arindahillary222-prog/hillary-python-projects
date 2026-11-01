@@ -6,11 +6,11 @@ Provisional product name: **AxiomForge**. It is an evidence-first engineering wo
 
 ## Release scope
 
-This first release is a functional foundation, not a claim that the full multidisciplinary platform is complete. It delivers a real solar-and-battery calculation service, a beam screening calculation, auditable calculation records, scenario comparison, project-management next steps, and an interactive concept visualization. Unsupported capabilities remain visible as roadmap items.
+This first release is a functional foundation, not a claim that the full multidisciplinary platform is complete. It delivers a real solar-and-battery calculation service, a beam screening calculation, auditable calculation records, scenario comparison, project-management next steps, and a dimensioned WebGL BIM visualization environment with architectural and technical inspection modes. Unsupported capabilities remain visible as roadmap items.
 
 ## Architecture
 
-- `frontend/`: dependency-light responsive web application using semantic HTML, CSS variables, and browser JavaScript.
+- `frontend/`: responsive browser application using semantic HTML, CSS variables, browser JavaScript, Three.js WebGL geometry and OrbitControls for professional BIM inspection.
 - `backend/app.py`: FastAPI service with Pydantic schemas, deterministic engineering functions, validation, provenance fields, and health endpoint.
 - `tests/`: Python tests for energy, structural calculations, and API contracts.
 - `docs/`: architecture, solver registry, validation, security, pricing, roadmap, limitations, and handover.
