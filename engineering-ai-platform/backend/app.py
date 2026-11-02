@@ -27,20 +27,20 @@ class BeamRequest(BaseModel):
     second_moment_cm4: float = Field(default=8333, gt=0, le=1e12)
 
 class WaterNetworkRequest(BaseModel):
-    reservoir_head_m: float = Field(default=30, gt=0, le=500)
-    demand_lps: float = Field(default=2.0, gt=0, le=1000)
-    pipe_length_m: float = Field(default=120, gt=0, le=10_000)
-    pipe_diameter_mm: float = Field(default=80, gt=1, le=2000)
-    roughness_c: float = Field(default=130, gt=1, le=200)
-    elevation_rise_m: float = Field(default=8, ge=-500, le=500)
+    reservoir_head_m: float = Field(gt=0, le=500)
+    demand_lps: float = Field(gt=0, le=1000)
+    pipe_length_m: float = Field(gt=0, le=10_000)
+    pipe_diameter_mm: float = Field(gt=1, le=2000)
+    roughness_c: float = Field(gt=1, le=200)
+    elevation_rise_m: float = Field(ge=-500, le=500)
 
 class AirflowRequest(BaseModel):
-    room_length_m: float = Field(default=5, gt=0, le=100)
-    room_width_m: float = Field(default=4, gt=0, le=100)
-    room_height_m: float = Field(default=3, gt=0, le=30)
-    air_changes_per_hour: float = Field(default=4, gt=0, le=100)
-    inlet_area_m2: float = Field(default=0.25, gt=0, le=100)
-    sensible_load_kw: float = Field(default=1.5, ge=0, le=1000)
+    room_length_m: float = Field(gt=0, le=100)
+    room_width_m: float = Field(gt=0, le=100)
+    room_height_m: float = Field(gt=0, le=30)
+    air_changes_per_hour: float = Field(gt=0, le=100)
+    inlet_area_m2: float = Field(gt=0, le=100)
+    sensible_load_kw: float = Field(ge=0, le=1000)
 
 class CalculationRecord(BaseModel):
     calculation_id: str

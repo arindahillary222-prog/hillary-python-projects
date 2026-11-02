@@ -11,3 +11,11 @@
 ## 0.3 — WebGL BIM inspection foundation
 
 - Added Three.js model inspection, selection, measurement, floor controls, section control, camera modes and calculation overlays.
+
+## 0.6 — User-driven project correction
+
+- Changed the first-open experience to a blank engineering workspace with no active project or benchmark result.
+- Added explicit blank-project creation and opt-in Mbarara example loading.
+- Replaced water and airflow benchmark buttons with required user-input forms and calculation-driven result diagrams.
+- Added clean-energy user-input workspace with generation, grid-import and export result bars.
+- Made water and airflow production schemas reject missing fields instead of silently using fixture defaults.

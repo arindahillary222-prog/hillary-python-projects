@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1111">
-  <title>AxiomForge — Mbarara Smart Residence BIM Studio</title>
+  <title>AxiomForge — Engineering Workspace</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -33,16 +33,16 @@
     </aside>
     <main class="workspace">
       <header class="topbar">
-        <div><div class="eyebrow">AXIOMFORGE / HILLARY ENGINEERING SOFTWARE</div><h1>Mbarara Smart Residence <span class="revision">P02</span></h1><p class="subtitle">Professional visualization environment · provisional editable reconstruction</p></div>
-        <div class="top-actions"><span class="status-chip warning">PRELIMINARY DESIGN</span><span class="status-chip"><span class="online-dot"></span> SOLVER CONNECTED</span></div>
+        <div><div class="eyebrow">AXIOMFORGE / HILLARY ENGINEERING SOFTWARE</div><h1 id="pageTitle">Engineering workspace</h1><p class="subtitle" id="pageSubtitle">Create a project, upload data or choose a discipline to begin.</p></div>
+        <div class="top-actions"><span class="status-chip">NO ACTIVE PROJECT</span><span class="status-chip"><span class="online-dot"></span> PLATFORM ONLINE</span></div>
       </header>
-      <section class="project-strip"><div><span class="strip-label">PROJECT REF</span><strong>MBR-26-001</strong></div><div><span class="strip-label">LOCATION</span><strong>Mbarara, Uganda</strong></div><div><span class="strip-label">MODEL BASIS</span><strong>Written brief · P02</strong></div><div><span class="strip-label">DIMENSIONS</span><strong>12.00 × 10.50 m</strong></div><div><span class="strip-label">GROSS FLOOR AREA</span><strong>252.00 m²</strong></div><div class="disclaimer">NOT CONSTRUCTION-APPROVED</div></section>
+      <section class="project-strip hidden" id="projectStrip"><div><span class="strip-label">PROJECT REF</span><strong id="projectRef">—</strong></div><div><span class="strip-label">LOCATION</span><strong id="projectLocation">—</strong></div><div><span class="strip-label">MODEL BASIS</span><strong id="projectBasis">—</strong></div><div><span class="strip-label">STATUS</span><strong id="projectStatus">—</strong></div><div class="disclaimer" id="projectDisclaimer">No active project</div></section>
       <section id="moduleWorkspace" class="module-workspace panel hidden"></section>
       <section class="studio-grid">
         <div class="viewer-panel panel">
           <div class="panel-toolbar"><div><span class="eyebrow">3D MODEL / BIM INSPECTION</span><h2 id="workspaceTitle">Architectural model</h2></div><div class="toolbar-actions"><button class="tool-button active" id="modeArchitectural">ARCH</button><button class="tool-button" id="modeTechnical">BIM</button><button class="tool-button" id="cameraToggle">PERSPECTIVE</button><button class="tool-button" id="resetView">RESET VIEW</button></div></div>
-          <div class="viewport-wrap" id="viewportWrap"><canvas id="modelCanvas" aria-label="Interactive 3D BIM model of the Mbarara Smart Residence"></canvas><div class="viewport-badge"><span class="online-dot"></span> WEBGL RENDERER · REAL GEOMETRY</div><div class="orientation"><span>N</span><i></i><small>E</small></div><div class="viewport-help">Orbit: drag · Pan: shift + drag · Zoom: wheel<br><span>Click any wall, room, door, window or roof component to inspect</span></div><div id="measureLabel" class="measure-label hidden"></div></div>
-          <div class="viewer-footer"><div class="legend"><span><i class="legend-swatch wall"></i> envelope</span><span><i class="legend-swatch glass"></i> glazing</span><span><i class="legend-swatch selected"></i> selected</span><span><i class="legend-swatch contour"></i> engineering overlay</span></div><span class="model-state" id="modelState">Model loaded · 34 editable components</span></div>
+          <div class="viewport-wrap" id="viewportWrap"><canvas id="modelCanvas" aria-label="Interactive BIM model viewer"></canvas><div class="viewport-badge"><span class="online-dot"></span> WEBGL RENDERER · REAL GEOMETRY</div><div class="orientation"><span>N</span><i></i><small>E</small></div><div class="viewport-help">Orbit: drag · Pan: shift + drag · Zoom: wheel<br><span>Click any wall, room, door, window or roof component to inspect</span></div><div id="measureLabel" class="measure-label hidden"></div></div>
+          <div class="viewer-footer"><div class="legend"><span><i class="legend-swatch wall"></i> envelope</span><span><i class="legend-swatch glass"></i> glazing</span><span><i class="legend-swatch selected"></i> selected</span><span><i class="legend-swatch contour"></i> engineering overlay</span></div><span class="model-state" id="modelState">No model loaded · open a project or example</span></div>
         </div>
         <aside class="inspector-column">
           <section class="panel inspector-card"><div class="panel-heading"><div><span class="eyebrow">OBJECT INSPECTOR</span><h2 id="selectionName">Select a component</h2></div><span class="selection-id" id="selectionId">—</span></div><div id="selectionEmpty" class="empty-inspector">Select geometry in the model to view dimensions, material and BIM metadata.</div><dl id="selectionDetails" class="property-list hidden"></dl></section>
