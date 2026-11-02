@@ -19,3 +19,11 @@
 - Replaced water and airflow benchmark buttons with required user-input forms and calculation-driven result diagrams.
 - Added clean-energy user-input workspace with generation, grid-import and export result bars.
 - Made water and airflow production schemas reject missing fields instead of silently using fixture defaults.
+
+## 0.7 — Technical visualization and persistent local projects
+
+- Added calculation-driven SVG pipe schematic with flow direction, hydraulic grade line, elevations and distinct hydraulic units.
+- Added scaled analytical room diagram with inlet/outlet locations, airflow path, ACH, velocity and sensible temperature rise.
+- Added energy balance profile with separate generation, grid-import and export series.
+- Added strict client-side blank-field and per-parameter physical validation before API calls.
+- Added persistent local project records, saved calculation history and project reopen UI. Secure authenticated cloud storage remains a separate account-storage phase.

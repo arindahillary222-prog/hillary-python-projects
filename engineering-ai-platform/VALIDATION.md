@@ -24,3 +24,11 @@ The automated Playwright runtime used in the session had WebGL disabled; it was 
 - Airflow journey: user-entered 6 × 5 × 3 m room, 6 ACH, 0.3 m² inlet, 2 kW load produced `0.15 m³/s` flow, `0.5 m/s` inlet velocity and `11.056 °C` sensible rise.
 - Example isolation: Mbarara remained hidden until explicit Example Projects selection; then loaded with 34 editable components and orthographic control remained functional.
 - Backend suite: 10 tests passed after moving the reference suite to `tests/engineering/`.
+
+## Release 0.7 evidence
+
+- Water result renders an SVG technical pipe schematic and separate unit-labeled result fields for head loss, residual head and velocity.
+- Airflow result renders a scaled room schematic with inlet/outlet markers and an analytical airflow path; no CFD claim is made.
+- Energy result renders separate annual generation, coverage and grid-import fields with an annualized energy balance profile.
+- Blank required fields are rejected in the browser before `Number()` conversion; per-field lower-bound messages are shown.
+- A created project persists in `localStorage` across page navigation and is listed in My Projects with saved calculation history. This is local browser persistence, not authenticated cloud storage.
