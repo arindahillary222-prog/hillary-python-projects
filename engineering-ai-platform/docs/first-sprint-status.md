@@ -32,3 +32,7 @@ This release continues from the existing Supabase project and does not create an
 - Account deletion requires a privileged server-side operation and is not exposed through the publishable browser key.
 - PDF table extraction, IFC geometry extraction and DXF geometry extraction are not claimed by this release.
 - The beam tool remains a screening solver, not a code-compliance, FEM, reinforcement or construction approval workflow.
+
+## Public deployment evidence
+
+After the Pages Function deployment at commit `c9cc202`, the public site was checked at `https://axiomforge-engineering.pages.dev/`. Playwright verified the structural benchmark in production with 10 kN·m moment, 10 kN support shear, 1 mm deflection, SVG diagrams and an expandable derivation. The same public run verified blank BIM isolation. A second public run verified the water benchmark residual head, airflow benchmark flow, annual PV generation of 5,022.4 kWh, SVG outputs and calculation explanations for all three existing engineering workspaces.

@@ -36,3 +36,11 @@
 - Added browser authentication UI, explicit local-project migration and cross-device cloud project listing/reopen support.
 - Added validated engineering file intake with CSV/JSON preview and private storage upload for authenticated cloud projects. PDF, IFC, DXF and XLSX parsing remains FOUNDATION until dedicated parsers are integrated.
 - BIM/CAD Studio now opens as a blank model; Mbarara remains explicit under Example Projects.
+
+## 0.9 — First-sprint engineering workflow increment
+
+- Added production structural beam Pages Function and verified the required benchmark publicly.
+- Added calculation derivation panels across beam, water, airflow and clean energy workspaces.
+- Replaced the arbitrary annual energy curve with an annual-balance bar chart with numeric gridlines.
+- Added XLSX worksheet preview, collapsible navigation, tool search, cloud restoration queries and save-state handling.
+- Public verification passed for beam, water, airflow, energy and blank BIM journeys. Authenticated account-isolation and cross-device tests remain explicitly unpassed pending authorized test accounts.
