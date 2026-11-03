@@ -27,3 +27,12 @@
 - Added energy balance profile with separate generation, grid-import and export series.
 - Added strict client-side blank-field and per-parameter physical validation before API calls.
 - Added persistent local project records, saved calculation history and project reopen UI. Secure authenticated cloud storage remains a separate account-storage phase.
+
+## 0.8 — Secure cloud foundation
+
+- Created the authorized Supabase Free-plan project `axiomforge-engineering` at $0/month.
+- Added private projects, revisions, calculation histories, file metadata and user preferences tables with owner-scoped Row Level Security.
+- Added private `engineering-files` storage bucket policies scoped to authenticated user folders.
+- Added browser authentication UI, explicit local-project migration and cross-device cloud project listing/reopen support.
+- Added validated engineering file intake with CSV/JSON preview and private storage upload for authenticated cloud projects. PDF, IFC, DXF and XLSX parsing remains FOUNDATION until dedicated parsers are integrated.
+- BIM/CAD Studio now opens as a blank model; Mbarara remains explicit under Example Projects.

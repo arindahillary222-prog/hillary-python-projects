@@ -32,3 +32,11 @@ The automated Playwright runtime used in the session had WebGL disabled; it was 
 - Energy result renders separate annual generation, coverage and grid-import fields with an annualized energy balance profile.
 - Blank required fields are rejected in the browser before `Number()` conversion; per-field lower-bound messages are shown.
 - A created project persists in `localStorage` across page navigation and is listed in My Projects with saved calculation history. This is local browser persistence, not authenticated cloud storage.
+
+## Release 0.8 secure cloud foundation evidence
+
+- Supabase project created in `arindahillary222-prog's Org`, region `eu-west-1`, Free plan, quoted cost `$0/month`.
+- RLS schema applied for `projects`, `project_revisions`, `calculations`, `project_files`, `user_preferences` and private storage objects.
+- Anonymous REST read of `projects` returned an empty result and did not expose private records.
+- Local Playwright: neutral first-open, account sign-in surface, upload/import surface, blank BIM model and explicit Mbarara example switching all passed.
+- Authenticated cloud acceptance requires a user-created account/sign-in session; no test credential was fabricated. The UI provides sign-up, sign-in, explicit local migration and cloud reopen controls.
