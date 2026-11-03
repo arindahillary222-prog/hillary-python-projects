@@ -41,3 +41,12 @@ def test_frontend_is_blank_project_first():
     assert 'class="project-strip hidden" id="projectStrip"' in html
     assert 'RUN WATER NETWORK BENCHMARK' not in html
     assert 'RUN AIRFLOW ROOM BENCHMARK' not in html
+
+def test_structural_benchmark_matches_direct_formulas():
+    r=client.post('/api/structure/beam',json={'span_m':4,'load_kn_m':5,'elastic_modulus_gpa':200,'second_moment_cm4':8333})
+    assert r.status_code==200
+    d=r.json()
+    assert d['outputs']['maximum_moment_knm']==10
+    assert d['outputs']['maximum_shear_kn']==10
+    assert abs(d['outputs']['maximum_deflection_mm']-1.0) < 0.01
+    assert 'formula' in d['calculation'] and d['record']['units']['shear']=='kN'
