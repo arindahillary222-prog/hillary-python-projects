@@ -50,3 +50,16 @@ def test_structural_benchmark_matches_direct_formulas():
     assert d['outputs']['maximum_shear_kn']==10
     assert abs(d['outputs']['maximum_deflection_mm']-1.0) < 0.01
     assert 'formula' in d['calculation'] and d['record']['units']['shear']=='kN'
+
+def test_structural_intermediates_and_profile_equations_are_traceable():
+    d=client.post('/api/structure/beam',json={'span_m':4,'load_kn_m':5,'elastic_modulus_gpa':200,'second_moment_cm4':8333}).json()
+    assert d['calculation']['intermediate']['E_pa']==200_000_000_000.0
+    assert d['calculation']['intermediate']['I_m4']==8.333e-05
+    assert d['calculation']['intermediate']['load_resultant_kn']==20
+    assert 'Vsupport = wL/2' in d['calculation']['formula']
+
+def test_frontend_declares_sampled_beam_profiles():
+    html=client.get('/app.js').text
+    assert 'Array.from({length:n+1}' in html
+    assert 'w*(L/2-x)' in html and 'w*x*(L-x)/2' in html
+    assert 'display axes are calibrated' in html

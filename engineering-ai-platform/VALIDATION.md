@@ -1,42 +1,11 @@
-# Validation
 
-## Current evidence
 
-- Python regression suite: 6 tests passed.
-- JavaScript syntax check: passed with `node --check frontend/app.js`.
-- Static artifact and navigation checks: passed.
-- Local route manifest: HTTP 200 and valid JSON.
-- Public browser check: Mbarara model loaded in a WebGL-capable connected browser with zero console errors after the WebGL capability probe.
-- Public interaction checks: technical BIM mode, orthographic camera, floor visibility, section slider, exploded view, material preset, solar overlay and live solar solver.
-- Public component check: upper / North external wall selected with dimensions `12.00 × 3.12 × 0.23 m`.
-- Public measurement check: tested geometry returned an 8.000 m measured distance.
-- Public solar check: default inputs returned 8,789.2 kWh/year and `SCREENING_PASS`.
+## Priority 0 continuation — 2026-11-04
 
-## Boundaries
+The local Python regression suite passed **13 tests** with one unrelated Starlette deprecation warning. The suite includes the required beam benchmark, exact converted intermediate values and source-level checks that sampled V(x), M(x) and y(x) equations are present.
 
-The automated Playwright runtime used in the session had WebGL disabled; it was therefore used for DOM/control assertions, while the connected browser verified actual WebGL rendering and selection. Structural, CFD, EPANET, SWMM, code execution, durable persistence and professional standards compliance are not claimed as complete.
+The existing Supabase project `dzkumrgcuhalnosrhufg` is healthy. Migration `priority0_persistence_security` applied successfully. SQL inspection confirmed `save_calculation_atomic`, `project_revisions_project_owner_fkey`, `calculations_project_owner_fkey` and `project_files_project_owner_fkey`. The project, revision, calculation and file tables contained zero rows at this verification point. An anonymous REST RPC call returned HTTP 401.
 
-## Release 0.6 correction evidence
+Local Playwright verified the following input fixtures: beam `L=4 m, w=5 kN/m, E=200 GPa, I=8333 cm⁴` rendered sampled diagrams with endpoint values `M=0, y=0`, midspan `M=10 kN·m, y=1.000 mm`, and reactions `10 kN`; water `30 m, 2 L/s, 120 m, 80 mm, C=120, rise=8 m` rendered an HGL from `30.000 m` to `21.6007 m` against a stated linear elevation profile; and room `6×4×3 m, ACH=5, inlet=0.30 m², load=1.2 kW` rendered dimensioned analytical room geometry with `Q=0.1000 m³/s`, `v=0.3333 m/s` and `ΔT=9.950°C`. Input edits produced an explicit stale-result message until recalculation.
 
-- Fresh local first-open: neutral `Engineering workspace`, hidden project strip, no benchmark values or active Mbarara project.
-- Blank project journey: created `North plant upgrade` with `LOCAL-DRAFT` status.
-- Water journey: user-entered 30 m head, 4 L/s, 120 m, 100 mm, C=130, 8 m rise produced `0.4191 m` head loss; changing diameter to 200 mm produced `0.0143 m`, confirming recalculation and result-view change.
-- Airflow journey: user-entered 6 × 5 × 3 m room, 6 ACH, 0.3 m² inlet, 2 kW load produced `0.15 m³/s` flow, `0.5 m/s` inlet velocity and `11.056 °C` sensible rise.
-- Example isolation: Mbarara remained hidden until explicit Example Projects selection; then loaded with 34 editable components and orthographic control remained functional.
-- Backend suite: 10 tests passed after moving the reference suite to `tests/engineering/`.
-
-## Release 0.7 evidence
-
-- Water result renders an SVG technical pipe schematic and separate unit-labeled result fields for head loss, residual head and velocity.
-- Airflow result renders a scaled room schematic with inlet/outlet markers and an analytical airflow path; no CFD claim is made.
-- Energy result renders separate annual generation, coverage and grid-import fields with an annualized energy balance profile.
-- Blank required fields are rejected in the browser before `Number()` conversion; per-field lower-bound messages are shown.
-- A created project persists in `localStorage` across page navigation and is listed in My Projects with saved calculation history. This is local browser persistence, not authenticated cloud storage.
-
-## Release 0.8 secure cloud foundation evidence
-
-- Supabase project created in `arindahillary222-prog's Org`, region `eu-west-1`, Free plan, quoted cost `$0/month`.
-- RLS schema applied for `projects`, `project_revisions`, `calculations`, `project_files`, `user_preferences` and private storage objects.
-- Anonymous REST read of `projects` returned an empty result and did not expose private records.
-- Local Playwright: neutral first-open, account sign-in surface, upload/import surface, blank BIM model and explicit Mbarara example switching all passed.
-- Authenticated cloud acceptance requires a user-created account/sign-in session; no test credential was fabricated. The UI provides sign-up, sign-in, explicit local migration and cloud reopen controls.
+Production verification of this Priority 0 build remains pending. The two-account tests are intentionally not marked passed because no authorized test credentials were supplied or fabricated. The first sprint remains incomplete.

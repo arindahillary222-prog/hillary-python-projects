@@ -44,3 +44,13 @@
 - Replaced the arbitrary annual energy curve with an annual-balance bar chart with numeric gridlines.
 - Added XLSX worksheet preview, collapsible navigation, tool search, cloud restoration queries and save-state handling.
 - Public verification passed for beam, water, airflow, energy and blank BIM journeys. Authenticated account-isolation and cross-device tests remain explicitly unpassed pending authorized test accounts.
+
+## 0.10 — Priority 0 persistence and numerical credibility
+
+- Added an authenticated atomic Supabase save RPC with monotonic per-project integer revisions.
+- Added child-to-parent ownership constraints and parent-aware RLS policies for revisions, calculations and project files.
+- Awaited cloud calculation persistence before reporting `Saved to Cloud`; local work is retained on partial failure.
+- Replaced fixed beam SVG curves with sampled V(x), M(x) and y(x) profiles and calibrated axes.
+- Replaced fixed water and airflow sketches with input-scaled HGL/elevation and dimensioned analytical-room geometry.
+- Added stale-result indicators when calculation inputs change before recomputation.
+- First sprint remains incomplete until production deployment, two-account isolation, full file lifecycle, import parsers, account deletion and cross-device geometry recovery are evidenced.
