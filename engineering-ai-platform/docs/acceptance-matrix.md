@@ -16,5 +16,6 @@ Status is evidence-based. A row is **PASS** only when the listed behavior has be
 | F-05 | Auth lifecycle and deletion | **PARTIAL** | `frontend/app.js`, Supabase Auth | Sign-in, signup, reset request and export controls exist; authorized two-account, confirmation and server-side deletion evidence remains pending. |
 | F-06 | Full BIM geometry cloud reconstruction | **PARTIAL** | `frontend/app.js` | Editable local wall/slab metadata saves; full scene graph/material/topology restoration remains pending. |
 | G-01 | All modules labeled honestly | **PASS for current implemented screens** | `frontend/app.js` | Roadmap and screening labels are used; no full-discipline claim is made. |
+| M-01 | Responsive phone/tablet/desktop layout, drawer and page overflow | **PASS AUTOMATED DEPLOYED VIEWPORTS** | `frontend/index.html`, `frontend/styles.css`, `frontend/app.js` | Tested deployed release `3ab4891` at 320, 360, 375, 390, 414, 430, 768, 1024 and 1280 px. Page/body widths matched viewport; mobile drawer opened/closed; 390 px beam calculation and BIM touch-sized controls rendered. Real iOS Safari and Android-device testing remain unavailable in this environment. |
 
 The first sprint remains **INCOMPLETE** until every Section L gate in the master specification is evidenced on production and controlled security tests.
