@@ -1,56 +1,8 @@
-# Changelog
 
-## 0.4 — Professional workspace restoration
+## 0.11 — Responsive mobile workspace
 
-- Restored grouped navigation across general, engineering, management, professional tools and system areas.
-- Added genuine module-specific workspace views with evidence-state labels and project-context actions.
-- Replaced the two overlapping roof panels with a four-sided hipped roof mesh and ridge/hip metadata.
-- Relabeled conceptual columns as hypothetical analytical framing aids.
-- Added portfolio-safe architecture, validation, technology and contribution documentation.
-
-## 0.3 — WebGL BIM inspection foundation
-
-- Added Three.js model inspection, selection, measurement, floor controls, section control, camera modes and calculation overlays.
-
-## 0.6 — User-driven project correction
-
-- Changed the first-open experience to a blank engineering workspace with no active project or benchmark result.
-- Added explicit blank-project creation and opt-in Mbarara example loading.
-- Replaced water and airflow benchmark buttons with required user-input forms and calculation-driven result diagrams.
-- Added clean-energy user-input workspace with generation, grid-import and export result bars.
-- Made water and airflow production schemas reject missing fields instead of silently using fixture defaults.
-
-## 0.7 — Technical visualization and persistent local projects
-
-- Added calculation-driven SVG pipe schematic with flow direction, hydraulic grade line, elevations and distinct hydraulic units.
-- Added scaled analytical room diagram with inlet/outlet locations, airflow path, ACH, velocity and sensible temperature rise.
-- Added energy balance profile with separate generation, grid-import and export series.
-- Added strict client-side blank-field and per-parameter physical validation before API calls.
-- Added persistent local project records, saved calculation history and project reopen UI. Secure authenticated cloud storage remains a separate account-storage phase.
-
-## 0.8 — Secure cloud foundation
-
-- Created the authorized Supabase Free-plan project `axiomforge-engineering` at $0/month.
-- Added private projects, revisions, calculation histories, file metadata and user preferences tables with owner-scoped Row Level Security.
-- Added private `engineering-files` storage bucket policies scoped to authenticated user folders.
-- Added browser authentication UI, explicit local-project migration and cross-device cloud project listing/reopen support.
-- Added validated engineering file intake with CSV/JSON preview and private storage upload for authenticated cloud projects. PDF, IFC, DXF and XLSX parsing remains FOUNDATION until dedicated parsers are integrated.
-- BIM/CAD Studio now opens as a blank model; Mbarara remains explicit under Example Projects.
-
-## 0.9 — First-sprint engineering workflow increment
-
-- Added production structural beam Pages Function and verified the required benchmark publicly.
-- Added calculation derivation panels across beam, water, airflow and clean energy workspaces.
-- Replaced the arbitrary annual energy curve with an annual-balance bar chart with numeric gridlines.
-- Added XLSX worksheet preview, collapsible navigation, tool search, cloud restoration queries and save-state handling.
-- Public verification passed for beam, water, airflow, energy and blank BIM journeys. Authenticated account-isolation and cross-device tests remain explicitly unpassed pending authorized test accounts.
-
-## 0.10 — Priority 0 persistence and numerical credibility
-
-- Added an authenticated atomic Supabase save RPC with monotonic per-project integer revisions.
-- Added child-to-parent ownership constraints and parent-aware RLS policies for revisions, calculations and project files.
-- Awaited cloud calculation persistence before reporting `Saved to Cloud`; local work is retained on partial failure.
-- Replaced fixed beam SVG curves with sampled V(x), M(x) and y(x) profiles and calibrated axes.
-- Replaced fixed water and airflow sketches with input-scaled HGL/elevation and dimensioned analytical-room geometry.
-- Added stale-result indicators when calculation inputs change before recomputation.
-- First sprint remains incomplete until production deployment, two-account isolation, full file lifecycle, import parsers, account deletion and cross-device geometry recovery are evidenced.
+- Added a touch-friendly mobile navigation drawer with searchable grouped navigation, active state, backdrop dismissal and no loss of workspace state.
+- Added responsive single-column layouts, safe-area support, 16px mobile inputs to prevent iPhone zoom, 44px touch targets, contained table scrolling and responsive technical result cards.
+- Added mobile BIM fullscreen inspection control while preserving orbit, pinch zoom and touch pan through Three.js OrbitControls.
+- Added graceful WebGL-unavailable messaging and preserved all engineering records and calculation workflows on non-WebGL devices.
+- Mobile completion remains evidence-based until all required viewport and real-device checks are completed.

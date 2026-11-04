@@ -8,8 +8,10 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <button class="mobile-menu-toggle" id="mobileMenuToggle" type="button" aria-controls="primaryNavigation" aria-expanded="false"><span aria-hidden="true">☰</span><span>MENU</span></button>
+  <div class="mobile-backdrop" id="mobileBackdrop" hidden></div>
   <div class="app-shell">
-    <aside class="sidebar">
+    <aside class="sidebar" id="primaryNavigation" aria-label="Primary navigation">
       <div class="brand"><span class="brand-mark">A</span><span>AXIOM<span class="accent">FORGE</span></span></div>
       <div class="sidebar-search"><input id="navSearch" type="search" placeholder="Search tools…" aria-label="Search tools"></div><div class="sidebar-scroll">
         <div class="nav-group"><div class="sidebar-label">GENERAL</div>
@@ -40,7 +42,7 @@
       <section id="moduleWorkspace" class="module-workspace panel hidden"></section>
       <section class="studio-grid hidden">
         <div class="viewer-panel panel">
-          <div class="panel-toolbar"><div><span class="eyebrow">3D MODEL / BIM INSPECTION</span><h2 id="workspaceTitle">Architectural model</h2></div><div class="toolbar-actions"><button class="tool-button active" id="modeArchitectural">ARCH</button><button class="tool-button" id="modeTechnical">BIM</button><button class="tool-button" id="cameraToggle">PERSPECTIVE</button><button class="tool-button" id="resetView">RESET VIEW</button><button class="tool-button" id="newWall">NEW WALL</button><button class="tool-button" id="newSlab">NEW SLAB</button><button class="tool-button" id="saveModel">SAVE MODEL</button></div></div>
+          <div class="panel-toolbar"><div><span class="eyebrow">3D MODEL / BIM INSPECTION</span><h2 id="workspaceTitle">Architectural model</h2></div><div class="toolbar-actions"><button class="tool-button active" id="modeArchitectural">ARCH</button><button class="tool-button" id="modeTechnical">BIM</button><button class="tool-button" id="cameraToggle">PERSPECTIVE</button><button class="tool-button" id="resetView">RESET VIEW</button><button class="tool-button" id="fullscreenModel">FULLSCREEN</button><button class="tool-button" id="newWall">NEW WALL</button><button class="tool-button" id="newSlab">NEW SLAB</button><button class="tool-button" id="saveModel">SAVE MODEL</button></div></div>
           <div class="viewport-wrap" id="viewportWrap"><canvas id="modelCanvas" aria-label="Interactive BIM model viewer"></canvas><div class="viewport-badge"><span class="online-dot"></span> WEBGL RENDERER · REAL GEOMETRY</div><div class="orientation"><span>N</span><i></i><small>E</small></div><div class="viewport-help">Orbit: drag · Pan: shift + drag · Zoom: wheel<br><span>Click any wall, room, door, window or roof component to inspect</span></div><div id="measureLabel" class="measure-label hidden"></div></div>
           <div class="viewer-footer"><div class="legend"><span><i class="legend-swatch wall"></i> envelope</span><span><i class="legend-swatch glass"></i> glazing</span><span><i class="legend-swatch selected"></i> selected</span><span><i class="legend-swatch contour"></i> engineering overlay</span></div><span class="model-state" id="modelState">No model loaded · open a project or example</span></div>
         </div>
