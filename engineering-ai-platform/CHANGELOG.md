@@ -1,4 +1,6 @@
 
-## 0.12 — Typed engineering data import foundation
+## 0.13 — Batch validation and hydraulic-label correction
 
-The import workspace now supports CSV, JSON and XLS/XLSX content inspection with worksheet selection, typed numeric/text/missing-cell summaries, safe escaped previews, explicit unit/column mapping and user confirmation. A confirmed first row can be handed to the supported beam screening workspace for review before calculation. Private storage remains authentication- and active-cloud-project-gated, and upload progress/error states are explicit. PDF, IFC and DXF remain metadata/storage-only until trusted parsers are implemented; this milestone does not claim editable CAD or document extraction.
+Blank imported cells are now rejected before numeric conversion in both single-row and batch beam handoff; they can no longer become zero through JavaScript number coercion. The import workspace now calculates every confirmed data row through the deployed beam endpoint and renders a screening result table. The water graphic now distinguishes hydraulic-grade head from residual head above the assumed terminal invert, eliminating the prior misleading HGL endpoint label. Cloud reopen now reports child-query errors and restores calculation history, revision records, file storage paths and saved model-state metadata where available.
+
+Two-account RLS, authenticated cross-device recovery and private-file isolation remain unpassed because no authorized test-account credentials or controlled inboxes are available in this session. No credentials were fabricated and no paid service was activated.
