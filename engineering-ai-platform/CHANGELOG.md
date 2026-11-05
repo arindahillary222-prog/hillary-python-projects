@@ -1,6 +1,6 @@
 
-## 0.13 — Batch validation and hydraulic-label correction
+## 0.14 — Batch history persistence and BIM reconstruction foundation
 
-Blank imported cells are now rejected before numeric conversion in both single-row and batch beam handoff; they can no longer become zero through JavaScript number coercion. The import workspace now calculates every confirmed data row through the deployed beam endpoint and renders a screening result table. The water graphic now distinguishes hydraulic-grade head from residual head above the assumed terminal invert, eliminating the prior misleading HGL endpoint label. Cloud reopen now reports child-query errors and restores calculation history, revision records, file storage paths and saved model-state metadata where available.
+Batch beam results now persist as a project calculation-history set. Local sessions retain every row and result; authenticated sessions upsert the project and save each row through the existing atomic calculation RPC, preserving independent revision/calculation records. Saved BIM primitives now include size, position, category, level and material metadata, and cloud/local reopen reconstructs those components into Three.js primitives rather than only restoring text metadata.
 
-Two-account RLS, authenticated cross-device recovery and private-file isolation remain unpassed because no authorized test-account credentials or controlled inboxes are available in this session. No credentials were fabricated and no paid service was activated.
+This remains a foundation milestone: live authenticated reopen, two-account isolation, account deletion, and full native PDF/DXF/IFC parsing still require evidence or additional implementation.
